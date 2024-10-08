@@ -1,57 +1,106 @@
-import numpy as np
+'''
+25개 구 손실 경향성을 한 그래프에 그릴때 오류 발생
+ValueError: cannot reshape array of size 0 into shape (0,newaxis,1)
+<Figure size 1200x600 with 0 Axes>
+'''
+
+from datetime import datetime
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
-from keras.layers import LSTM, Dense
+from keras.layers import LSTM, Dense, Dropout
+import matplotlib.pyplot as plt
 
-data = pd.read_csv('county_data_without_20_21_22.csv', encoding='cp949', header=None, names=['date', 'number of cold case' ,'county name'])
-data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d', errors='coerce')
-data.set_index('date', inplace=True)
+# 데이터 로드 및 전처리 함수
+def load_and_preprocess_data(file_path, county_name):
+    data = pd.read_csv(file_path)
+    data['date'] = pd.to_datetime(data['date'])
+    data = data[data['county name'] == county_name]  # 구 이름 필터링
+    data = data.sort_values('date').reset_index(drop=True)
+    
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaled_data = scaler.fit_transform(data['number of cold case'].values.reshape(-1, 1))
+    return scaled_data, scaler, data['date']
 
+# 시퀀스 생성 함수 (특정 날짜까지의 데이터를 사용해 예측)
+def create_dataset(data, date_data, target_date, time_step=1):
+    X, y = [], []
+    
+    # target_date까지의 데이터를 기준으로 시퀀스 생성
+    for i in range(len(data)):
+        if date_data[i] == target_date:
+            a = data[:i + 1, 0]  # target_date까지의 데이터를 시퀀스로 사용
+            X.append(a)
+            break
+    
+    return np.array(X)
 
+# 모델 생성 및 학습 함수
+def create_and_train_model(X, y):
+    X = [np.pad(x, (0, max(0, X.shape[1] - len(x))), 'constant', constant_values=0) for x in X]
+    X = np.array(X).reshape(len(X), -1, 1)
 
-# 데이터 불러오기
-data = pd.read_csv('county_data_without_20_21_22.csv', encoding='cp949')
+    model = Sequential()
+    model.add(LSTM(50, return_sequences=True, input_shape=(X.shape[1], 1)))
+    model.add(Dropout(0.2))
+    model.add(LSTM(50, return_sequences=False))
+    model.add(Dropout(0.2))
+    model.add(Dense(1))
 
-# 날짜를 인덱스로 설정
-data['날짜'] = pd.to_datetime(data['날짜'])
-data.set_index('날짜', inplace=True)
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    
+    history = model.fit(X, y, epochs=100, batch_size=32, verbose=0)  # verbose=0으로 학습 출력 생략
+    return model, history
 
-# 특정 시군구에 대한 데이터만 선택 (예: 'Jongno')
-district_data = data[data['시군구명_영문'] == 'Jongno']
+# 특정 날짜의 예측 수행 함수
+def predict_for_date(model, target_date, scaled_data, date_data):
+    # target_date까지의 데이터를 이용해 시퀀스 생성
+    X = create_dataset(scaled_data, date_data, target_date)
+    X = np.pad(X, (0, max(0, 1 - len(X[0]))), 'constant').reshape(1, -1, 1)  # LSTM 입력 형식으로 변환
+    predicted_value = model.predict(X)
+    return predicted_value
 
-# '발생건수(건)' 열만 사용하여 정규화
-scaler = MinMaxScaler(feature_range=(0, 1))
-scaled_data = scaler.fit_transform(district_data['발생건수(건)'].values.reshape(-1, 1))
+# 서버 시간을 기준으로 예측할 날짜 추출
+def get_server_date():
+    server_date = datetime.now().strftime('%Y-%m-%d')
+    return pd.to_datetime(server_date)
 
-# 시계열 윈도우 생성 함수
-def create_dataset(dataset, look_back=1):
-    X, Y = [], []
-    for i in range(len(dataset) - look_back - 1):
-        a = dataset[i:(i + look_back), 0]
-        X.append(a)
-        Y.append(dataset[i + look_back, 0])
-    return np.array(X), np.array(Y)
+# 메인 함수
+def main():
+    file_path = 'county_data_without_20_21_22.csv'  # 데이터 파일 경로
+    counties = ['Jongno', 'Jung', 'Yongsan', 'Seongdong', 'Gwangjin', 'Dongdaemun', 'Jungnang', 'Seongbuk', 'Gangbuk', 'Dobong', 'Nowon', 'Eunpyeong', 'Seodaemun', 'Mapo', 'Yangcheon', 'Gangseo', 'Guro',  'Geumcheon', 'Yeongdeungpo', 'Dongjak', 'Gwanak', 'Seocho', 'Songpa', 'Gangnam', 'Gangdong']  # 구 리스트
+    target_date = get_server_date()  # 서버 시간을 기준으로 날짜 설정
 
-# 30일 간의 데이터를 기반으로 예측 (look_back=30)
-look_back = 30
-X, Y = create_dataset(scaled_data, look_back)
+    plt.figure(figsize=(12, 6))  # 그래프 크기 설정
+    for county_name in counties:
+        # 1. 데이터 로드 및 전처리
+        scaled_data, scaler, date_data = load_and_preprocess_data(file_path, county_name)
 
-# 입력 데이터를 LSTM 모델에 맞게 3차원 배열로 변환
-X = np.reshape(X, (X.shape[0], X.shape[1], 1))
+        # 2. 예측 모델 생성 및 학습
+        # y 값을 생성하기 위해 시퀀스 생성
+        y = scaled_data[1:]  # 예측할 값은 다음 시점의 값
+        X = create_dataset(scaled_data, date_data, target_date)
 
-# LSTM 모델 생성
-model = Sequential()
-model.add(LSTM(50, return_sequences=True, input_shape=(look_back, 1)))
-model.add(LSTM(50))
-model.add(Dense(1))
-model.compile(optimizer='adam', loss='mean_squared_error')
+        model, history = create_and_train_model(X, y)
 
-# 모델 학습
-model.fit(X, Y, epochs=100, batch_size=32)
+        # 3. 손실 값 시각화
+        plt.plot(history.history['loss'], label=f'Loss for {county_name}')
 
-# 예측 (가장 최근의 데이터를 사용해 미래 예측)
-predicted_cases = model.predict(X[-1].reshape(1, look_back, 1))
-predicted_cases = scaler.inverse_transform(predicted_cases)
+        # 4. 서버 시간에 맞는 날짜의 예측 수행
+        predicted_value = predict_for_date(model, target_date, scaled_data, date_data)
+        predicted_value = scaler.inverse_transform(predicted_value)
+        
+        print(f'Predicted Value for {target_date.date()} in {county_name}: {predicted_value[0][0]}')
 
-print("예측된 감기 확진자 수:", predicted_cases)
+    # 그래프 제목 및 레이블 설정
+    plt.title('Loss for Each County')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend(loc='upper right')  # 범례 위치 조정
+    plt.grid()  # 격자 추가
+    plt.show()
+
+# 메인 함수 실행
+if __name__ == "__main__":
+    main()
