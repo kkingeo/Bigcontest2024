@@ -8,13 +8,7 @@ data = pd.read_csv('county_data_without_20_21_22.csv', encoding='cp949', header=
 data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d', errors='coerce')
 data.set_index('date', inplace=True)
 
-district_names=data['county name'].unique()
 
-import numpy as np
-import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
-from keras.models import Sequential
-from keras.layers import LSTM, Dense
 
 # 데이터 불러오기
 data = pd.read_csv('county_data_without_20_21_22.csv', encoding='cp949')
