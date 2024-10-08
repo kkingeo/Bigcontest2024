@@ -1,4 +1,5 @@
 '''
+3-1. sequential 모델 
 25개 구 손실 경향성을 한 그래프에 그릴때 오류 발생
 ValueError: cannot reshape array of size 0 into shape (0,newaxis,1)
 <Figure size 1200x600 with 0 Axes>
