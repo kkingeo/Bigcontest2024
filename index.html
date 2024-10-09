@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./main.css">
+    <script src="./main.js"></script>
+</head>
+<body>
+    <div class="titlebox">
+        <h1>
+            감기 예방을 위한
+            <br>
+            길찾기 서비스
+        </h1>
+        <h2>
+            서울 시민들을 대상으로 감기를 예방하기 위해
+            <br>
+            감기 확진자 예측 데이터셋과 길찾기 서비스를 제공합니다
+        </h2>
+    </div>
+        
+    <div class="contentbox">
+        <div class="map">
+            <div class="subtitle1">
+                <h3>지도 조회</h3>
+            </div>
+            <div class="map_image">
+                <!--이미지파일-->
+            </div>
+            <div class="tableclass">
+                <div class="tabletitle">
+                    확진자 예측
+                </div>
+                <table>
+                    <tr>
+                        <th>구역</th>
+                        <th>확진자 수</th>
+                        <th>구역</th>
+                        <th>확진자 수</th>
+                    </tr>
+                    <tr>
+                        <td>강남구</td>
+                        <td><!--확진자 예측 수--></td>
+                        <td>강동구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                    <tr>
+                        <td>강서구</td>
+                        <td><!--확진자 예측 수--></td>
+                        <td>강북구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                    <tr>
+                        <td>관악구</td>
+                        <td><!--확진자 예측 수--></td>
+                        <td>광진구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                    <tr>
+                        <td>구로구</td>
+                        <td><!--확진자 예측 수--></td>
+                        <td>금천구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                    <tr>
+                        <td>노원구</td>
+                        <td><!--확진자 예측 수--></td>
+                        <td>동대문구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                    <tr>
+                        <td>도봉구</td>
+                        <td><!--확진자 예측 수--></td>
+                        <td>동작구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                    <tr>
+                        <td>마포구</td>
+                        <td><!--확진자 예측 수--></td>
+                        <td>서대문구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                    <tr>
+                        <td>성동구</td>
+                        <td><!--확진자 예측 수--></td>
+                        <td>성북구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                    <tr>
+                        <td>서초구</td>
+                        <td><!--확진자 예측 수--></td>
+                        <td>송파구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                    <tr>
+                        <td>영등포구</td>
+                        <td><!--확진자 예측 수--></td>
+                        <td>용산구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                    <tr>
+                        <td>양천구</td>
+                        <td><!--확진자 예측 수--></td>
+                        <td>은평구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                    <tr>
+                        <td>종로구</td>
+                        <td><!--확진자 예측 수--></td>
+                        <td>중구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                    <tr>
+                        <td>중랑구</td>
+                        <td><!--확진자 예측 수--></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="routefinder">
+            <div class="subtitle2">
+                <h3>길찾기</h3>
+            </div>
+
+            <div class="inputbox">
+                <input type="text" id="start" placeholder="출발지 입력" tabindex="1">
+                <br>
+                <button onclick="switchPlaces()">⇅</button>
+                <button onclick="searchPage()">검색</button>
+                <br>
+                <input type="text" id="destination" placeholder="도착지 입력" tabindex="2">
+            </div>
+        </div>
+    </div>  
+</body>
+</html>
