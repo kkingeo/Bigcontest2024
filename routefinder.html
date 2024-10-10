@@ -1,11 +1,26 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>simpleMap</title>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script src="https://apis.openapi.sk.com/tmap/jsv2?version=1&appKey=YOUR_APP_KEY"></script> <!-- Tmap API -->
+  <script src="routefinder.js"></script> <!-- JavaScript 파일 불러오기 -->
 </head>
-<body>
-    helloworld
+<body onload="initTmap();">
+   <select id="city_do">
+      <option value="서울시" selected="selected">서울시</option>
+   </select>
+   <select id="gu_gun">
+      <option value="마포구" selected="selected">마포구</option>
+      <option value="서대문구">서대문구</option>
+   </select>
+   <select id="dong">
+      <option value="서교동" selected="selected">서교동</option>
+   </select>
+   <input type="text" id="bunji" name="bunji" value="1">
+   <button id="btn_select">적용하기</button>
+   <div id="map_div" style="width: 100%; height: 400px;"></div>
 </body>
 </html>
