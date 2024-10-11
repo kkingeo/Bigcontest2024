@@ -8,7 +8,7 @@
   <script src="https://apis.openapi.sk.com/tmap/jsv2?version=1&appKey=YOUR_APP_KEY"></script> <!-- Tmap API -->
   <script src="routefinder.js"></script> <!-- JavaScript 파일 불러오기 -->
 </head>
-<body onload="initTmap();">
+<body onload="initTmap(); getQueryParams()">
    <select id="city_do">
       <option value="서울시" selected="selected">서울시</option>
    </select>
