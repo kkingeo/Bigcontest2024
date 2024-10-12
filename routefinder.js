@@ -45,8 +45,7 @@ function getQueryParams() {
       scrollwheel: true
    });
    marker1 = new Tmapv2.Marker({
-      icon: "/upload/tmap/marker/pin_b_m_a.png",
-      iconSize: new Tmapv2.Size(24, 38),
+      position: new Tmapv2.LatLng(coords.lat, coords.lon),
       map: map
    });
  }
@@ -72,8 +71,6 @@ $(document).ready(function() {
                var markerPosition = new Tmapv2.LatLng(Number(response.lat), Number(response.lon));
                marker1 = new Tmapv2.Marker({
                   position: markerPosition,
-                  icon: "/upload/tmap/marker/pin_b_m_a.png",
-                  iconSize: new Tmapv2.Size(24, 38),
                   map: map
                });
                map.setCenter(markerPosition); // 지도 중심을 새로운 좌표로 이동
