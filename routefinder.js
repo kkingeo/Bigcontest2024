@@ -32,14 +32,14 @@ function getQueryParams() {
    return { lat, lon };
  }
 
-// Tmap 지도 초기화
-function initTmap() {
+ // Tmap 지도 초기화
+ function initTmap() {
    var coords = getQueryParams(); // URL 파라미터로 받은 좌표
-  
+   
    map = new Tmapv2.Map("map_div", {
       center: new Tmapv2.LatLng(37.56520450, 126.98702028), // 초기 지도 중심 좌표
       width: "100%",
-      height: "400px",
+      height: "100%",
       zoom: 17,
       zoomControl: true,
       scrollwheel: true
@@ -49,7 +49,7 @@ function initTmap() {
       iconSize: new Tmapv2.Size(24, 38),
       map: map
    });
-}
+ }
 
 // 문서 준비가 완료되면 실행
 $(document).ready(function() {
