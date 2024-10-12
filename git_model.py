@@ -64,141 +64,197 @@ output_file_path = 'filled_county_data.csv'
 data.to_csv(output_file_path, index=False)
 '''
 
-#3-5 sequential 2015~2018 학습 데이터, 2019 검증 데이터, 2023 테스트 데이터
-
-from datetime import timedelta
-import pandas as pd
+#4-4
+ 
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
-from keras.models import Sequential
-from keras.layers import LSTM, Dense, Dropout
+import pandas as pd
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from sklearn.preprocessing import QuantileTransformer  # QuantileTransformer 사용
 import matplotlib.pyplot as plt
-from sklearn.metrics import mean_squared_error
-from keras.callbacks import EarlyStopping
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+from scipy import stats
 
 # 데이터 로드 및 전처리 함수
-def load_and_preprocess_data(file_path, county_name):
+def load_and_preprocess_data(file_path, county_name='Jongno'):
     data = pd.read_csv(file_path)
     data['date'] = pd.to_datetime(data['date'])
-    data = data[data['county name'] == county_name]  # 구 이름 필터링
+    # 지정된 카운티 이름으로 필터링
+    data = data[data['county name'] == county_name]  
     data = data.sort_values('date').reset_index(drop=True)
+
+    # 1. 결측치 처리: 결측치를 중앙값으로 대체
+    data['number of cold case'].fillna(data['number of cold case'].median(), inplace=True)
+
+    # 2. 이상치 탐지: Z-Score를 사용하여 이상치 탐지
+    z_scores = np.abs(stats.zscore(data['number of cold case']))
     
-    scaler = MinMaxScaler(feature_range=(0, 1))
-    scaled_data = scaler.fit_transform(data['number of cold case'].values.reshape(-1, 1))
-    return scaled_data, scaler, data['date']
+    # 3. 이상치 처리: 중앙값으로 이상치 대체
+    median_value = data['number of cold case'].median()
+    data['number of cold case'] = np.where(z_scores > 3, median_value, data['number of cold case'])
 
-# 시퀀스 생성 함수 (모든 데이터를 사용)
-def create_dataset(data, time_step=60):
-    X, y = [], []
-    for i in range(len(data) - time_step):
-        X.append(data[i:i + time_step, 0])
-        y.append(data[i + time_step, 0])
-    return np.array(X), np.array(y)
+    # Quantile Transformation으로 데이터 정규화
+    transformer = QuantileTransformer(output_distribution='uniform')
+    scaled_data = transformer.fit_transform(data['number of cold case'].values.reshape(-1, 1))
+    
+    return scaled_data, transformer, data['date'], data
 
-# 연도별로 데이터셋을 나누는 함수
-def split_dataset_by_year(scaled_data, date_data, time_step=60):
-    # 데이터프레임에 연도를 추가
+# 박스 플롯을 그리는 함수
+def plot_box(data, title):
+    plt.figure(figsize=(10, 5))
+    plt.boxplot(data)
+    plt.title(title)
+    plt.ylabel('Cold Cases')
+    plt.show()
+
+# 데이터셋을 연도별로 나누는 함수
+def split_dataset_by_year(scaled_data, date_data, time_step=30):
     date_data = pd.to_datetime(date_data)
     year_data = date_data.dt.year
 
-    # 연도별로 데이터 나누기
     train_mask = (year_data >= 2015) & (year_data <= 2018)
     val_mask = (year_data == 2019)
     test_mask = (year_data == 2023)
 
-    X_train, y_train = create_dataset(scaled_data[train_mask], time_step)
-    X_val, y_val = create_dataset(scaled_data[val_mask], time_step)
-    X_test, y_test = create_dataset(scaled_data[test_mask], time_step)
-    
+    # 데이터 나누기
+    train_data = scaled_data[train_mask]
+    val_data = scaled_data[val_mask]
+    test_data = scaled_data[test_mask]
+
+    # 시퀀스 생성
+    X_train, y_train = create_dataset(train_data, time_step)
+    X_val, y_val = create_dataset(val_data, time_step)
+    X_test, y_test = create_dataset(test_data, time_step)
+
+    print(f"2023년 데이터 길이: {len(test_data)}")
+    print(f"X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
+
     return X_train, y_train, X_val, y_val, X_test, y_test
 
-# 모델 생성 및 학습 함수 (EarlyStopping 추가)
-def create_and_train_model(X_train, y_train, X_val, y_val):
-    model = Sequential()
-    model.add(LSTM(50, return_sequences=True, input_shape=(X_train.shape[1], 1)))
-    model.add(Dropout(0.2))
-    model.add(LSTM(50, return_sequences=False))
-    model.add(Dropout(0.2))
-    model.add(Dense(1))
+# 시퀀스 생성 함수 (LSTM을 위한 데이터)
+def create_dataset(data, time_step=30):
+    X, y = [], []
+    data_len = len(data)
+    for i in range(data_len - time_step):
+        X.append(data[i:i + time_step])  # (timesteps, 1) shape
+        y.append(data[i + time_step])
+    return np.array(X), np.array(y)
 
-    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
+# LSTM 모델 정의
+class LSTMModel(nn.Module):
+    def __init__(self, hidden_size, num_layers):
+        super(LSTMModel, self).__init__()
+        self.lstm = nn.LSTM(input_size=1, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_size, 1)
+
+    def forward(self, x):
+        out, _ = self.lstm(x)  # LSTM 적용
+        out = self.fc(out[:, -1, :])  # 마지막 LSTM 출력만 사용
+        return out
+
+# 학습 및 검증 함수 (LSTM 적용)
+def train_model(X_train, y_train, X_val, y_val, epochs=300, lr=0.001, hidden_size=256, num_layers=4):
+    model = LSTMModel(hidden_size, num_layers)
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=lr)
     
-    # EarlyStopping 콜백 추가 (검증 손실이 개선되지 않으면 10 에포크 이후에 학습 중단)
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-    
-    history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=100, batch_size=32, verbose=0, callbacks=[early_stopping])
-    return model, history
+    # Tensor로 변환
+    X_train = torch.tensor(X_train, dtype=torch.float32).reshape(X_train.shape[0], X_train.shape[1], 1)  # (samples, timesteps, 1)
+    y_train = torch.tensor(y_train, dtype=torch.float32)
+
+    if len(X_val) > 0:
+        X_val = torch.tensor(X_val, dtype=torch.float32).reshape(X_val.shape[0], X_val.shape[1], 1)  # (samples, timesteps, 1)
+        y_val = torch.tensor(y_val, dtype=torch.float32)
+
+    train_losses, val_losses = [], []
+    for epoch in range(epochs):
+        model.train()
+        optimizer.zero_grad()
+        outputs = model(X_train)
+        loss = criterion(outputs, y_train)
+        loss.backward()
+        optimizer.step()
+
+        train_losses.append(loss.item())
+
+        if len(X_val) > 0:
+            model.eval()
+            val_outputs = model(X_val)
+            val_loss = criterion(val_outputs, y_val)
+            val_losses.append(val_loss.item())
+
+        if epoch % 10 == 0:
+            if len(X_val) > 0:
+                print(f'Epoch {epoch}, Loss: {loss.item()}, Validation Loss: {val_loss.item()}')
+            else:
+                print(f'Epoch {epoch}, Loss: {loss.item()}')
+
+    return model, train_losses, val_losses
+
+# 예측 함수
+def predict(model, X_test):
+    model.eval()
+    X_test = torch.tensor(X_test, dtype=torch.float32).reshape(X_test.shape[0], X_test.shape[1], 1)  # (samples, timesteps, 1)
+    with torch.no_grad():
+        predictions = model(X_test)
+    return predictions.numpy()
 
 # 메인 함수
 def main():
     file_path = 'filled_county_data.csv'  # 데이터 파일 경로
-    target_date = pd.to_datetime('2024-10-25')  # 예측할 목표 날짜
-    counties = ['Jongno', 'Jung', 'Yongsan', 'Seongdong', 'Gwangjin', 'Dongdaemun', 'Jungnang', 'Seongbuk', 'Gangbuk', 'Dobong', 'Nowon', 'Eunpyeong', 'Seodaemun', 'Mapo', 'Yangcheon', 'Gangseo', 'Guro',  'Geumcheon', 'Yeongdeungpo', 'Dongjak', 'Gwanak', 'Seocho', 'Songpa', 'Gangnam', 'Gangdong']
+    county_name = 'Jongno'  # Jongno 구만 학습하도록 설정
+    
+    # 데이터 로드 및 전처리
+    scaled_data, transformer, date_data, original_data = load_and_preprocess_data(file_path, county_name)
 
-    last_model = None  # 마지막 모델 저장
+    # 박스 플롯: 이상치 대체 전
+    plot_box(original_data['number of cold case'], "Original Data Box Plot")
 
-    loss_fig, ax_loss = plt.subplots(figsize=(12, 6))  # 손실 그래프
-    mae_fig, ax_mae = plt.subplots(figsize=(12, 6))  # MAE 그래프
-    val_loss_fig, ax_val_loss = plt.subplots(figsize=(12, 6))  # Validation 손실 그래프
+    # 연도 기준으로 데이터 분할
+    time_step = 30  # 타임스텝을 설정
+    X_train, y_train, X_val, y_val, X_test, y_test = split_dataset_by_year(scaled_data, date_data, time_step)
 
-    for county_name in counties:
-        scaled_data, scaler, date_data = load_and_preprocess_data(file_path, county_name)
+    # 모델 학습
+    model, train_losses, val_losses = train_model(X_train, y_train, X_val, y_val)
 
-        # 연도 기준으로 데이터 분할
-        X_train, y_train, X_val, y_val, X_test, y_test = split_dataset_by_year(scaled_data, date_data)
+    # 예측
+    if X_test.shape[0] > 0:  # 테스트 데이터가 있는지 확인
+        predictions = predict(model, X_test)
+
+        # 예측값을 정규화된 상태로 그대로 사용
+        predictions_normalized = predictions.flatten()
+
+        # 실제 값을 정규화된 상태로 유지
+        y_test_normalized = y_test.flatten()
+
+        # 예측값과 실제값 시각화
+        plt.figure(figsize=(12, 6))
+        plt.plot(predictions_normalized, label='Predicted')
+        plt.plot(y_test_normalized, label='Actual')
+        plt.title("Predicted vs Actual (Normalized)")
+        plt.xlabel("Days")
+        plt.ylabel("Cold Cases (Normalized)")
+        plt.legend()
+        plt.show()
         
-        model, history = create_and_train_model(X_train, y_train, X_val, y_val)
+        # 예측값을 복원하여 MSE 계산
+        predictions_inverse = transformer.inverse_transform(predictions_normalized.reshape(-1, 1))
+        y_test_inverse = transformer.inverse_transform(y_test_normalized.reshape(-1, 1))
 
-        # 구별로 모델 저장
-        model.save(f'{county_name}_lstm_model.h5')  # 모델을 각 구 이름으로 저장
+        mse_original = mean_squared_error(y_test_inverse, predictions_inverse)
+        print(f'Mean Squared Error (Original Scale): {mse_original:.4f}')
 
-        last_model = model  # 마지막 학습된 모델을 전체 모델로 사용
+        # 추가: RMSE 계산
+        rmse_original = np.sqrt(mse_original)
+        print(f'Root Mean Squared Error (Original Scale): {rmse_original:.4f}')
 
-        # 목표 날짜까지 예측 수행
-        last_sequence = scaled_data[-len(X_test):]  # 테스트 셋 마지막 시퀀스 가져오기
-        predicted_values = predict_future(model, last_sequence, len(X_test), scaler)
+        # 추가: MAE 계산
+        mae_original = mean_absolute_error(y_test_inverse, predictions_inverse)
+        print(f'Mean Absolute Error (Original Scale): {mae_original:.4f}')
 
-        print(f'Predicted Value for {target_date.date()} in {county_name}: {predicted_values[-1][0]}')
+    else:
+        print("No test data available!")
 
-        # 손실 그래프
-        ax_loss.plot(history.history['loss'], label=f'{county_name} Loss')
-
-        # 검증 손실 그래프
-        ax_val_loss.plot(history.history['val_loss'], label=f'{county_name} Validation Loss')
-
-        # MAE 그래프
-        ax_mae.plot(history.history['mae'], label=f'{county_name} MAE')
-
-    # 그래프 제목 및 레이블 설정 (손실)
-    ax_loss.set_title('Loss for Each County')
-    ax_loss.set_xlabel('Epochs')
-    ax_loss.set_ylabel('Loss')
-    ax_loss.legend(loc='upper right')
-    ax_loss.grid(True)
-
-    # 검증 손실 그래프 제목 및 레이블 설정
-    ax_val_loss.set_title('Validation Loss for Each County')
-    ax_val_loss.set_xlabel('Epochs')
-    ax_val_loss.set_ylabel('Validation Loss')
-    ax_val_loss.legend(loc='upper right')
-    ax_val_loss.grid(True)
-
-    # 그래프 제목 및 레이블 설정 (MAE)
-    ax_mae.set_title('MAE for Each County')
-    ax_mae.set_xlabel('Epochs')
-    ax_mae.set_ylabel('Mean Absolute Error')
-    ax_mae.legend(loc='upper right')
-    ax_mae.grid(True)
-
-    plt.show()
-
-    # 전체 마지막 모델 저장
-    last_model.save('all_counties_lstm_model.h5')
-
-    # 마지막 모델 평가 및 정확도 출력 (퍼센티지로)
-    accuracy = evaluate_model(last_model, X_test, y_test, scaler)
-    print(f'Test Accuracy for last model: {accuracy:.2f}%')
-
-# 메인 함수 실행
 if __name__ == "__main__":
     main()
