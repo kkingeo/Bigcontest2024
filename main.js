@@ -24,5 +24,5 @@ function submitForm() {
     url += "start_city_do=" + start_city_do + "&start_gu_gun=" + start_gu_gun + "&start_dong=" + start_dong + "&start_bunji=" + start_bunji;
     url += "&destination_city_do=" + destination_city_do + "&destination_gu_gun=" + destination_gu_gun + "&destination_dong=" + destination_dong + "&destination_bunji=" + destination_bunji;
   
-    window.location.href = "routefinder.html";
+    window.location.href = url;
   }
