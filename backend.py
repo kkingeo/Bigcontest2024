@@ -126,7 +126,7 @@ def get_coordinates(address):
         if lat and lon:
             return {'lat': lat, 'lon': lon}
 
-    # 2. 지오코딩 실패 시 풀 텍스트 지오코딩 시도
+    # 2. 지오코딩 실패 시 풀텍스트 지오코딩 시도
     fulltext_response = fulltext_geocoding(address)
 
     if fulltext_response and fulltext_response.get('coordinateInfo') and fulltext_response['coordinateInfo'].get('coordinate'):
