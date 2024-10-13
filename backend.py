@@ -12,19 +12,9 @@ CONGESTION_URL = "https://apis.openapi.sk.com/transit/puzzle/subway/congestion/s
 
 @app.route('/find_route', methods=['POST'])
 def find_route():
-    start_address = {
-        'city_do': request.form.get('start_city_do'),
-        'gu_gun': request.form.get('start_gu_gun'),
-        'dong': request.form.get('start_dong'),
-        'bunji': request.form.get('start_bunji')
-    }
-
-    end_address = {
-        'city_do': request.form.get('dest_city_do'),
-        'gu_gun': request.form.get('dest_gu_gun'),
-        'dong': request.form.get('dest_dong'),
-        'bunji': request.form.get('dest_bunji')
-    }
+    # 프론트엔드에서 받은 출발지와 도착지 주소 (한 번에 입력받음)
+    start_address = request.form.get('start_address')  # 문자열로 전체 주소 입력
+    end_address = request.form.get('end_address')      # 문자열로 전체 주소 입력
 
     # 출발지와 도착지 좌표를 얻음
     start_coords = get_coordinates(start_address)
@@ -151,7 +141,7 @@ def geocoding(address):
         'format': 'json',
         'coordType': 'WGS84GEO',
         'addressType': 'A00',
-        'fullAddr': f"{address['city_do']} {address['gu_gun']} {address['dong']} {address['bunji']}"
+        'fullAddr': address  # 주소 문자열 그대로 사용
     }
 
     try:
@@ -173,7 +163,7 @@ def fulltext_geocoding(address):
         'version': 1,
         'format': 'json',
         'coordType': 'WGS84GEO',
-        'fullAddr': f"{address['city_do']} {address['gu_gun']} {address['dong']} {address['bunji']}"
+        'fullAddr': address  # 주소 문자열 그대로 사용
     }
 
     try:
