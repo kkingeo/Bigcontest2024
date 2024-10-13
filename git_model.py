@@ -64,7 +64,7 @@ output_file_path = 'filled_county_data.csv'
 data.to_csv(output_file_path, index=False)
 '''
 
-#4-4
+#4-4 Quantile Transformation 추가(boxcox나쁘진않앗는데그래도RMSE300)
  
 import numpy as np
 import pandas as pd
