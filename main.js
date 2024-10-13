@@ -6,23 +6,19 @@ function switchPlaces() {
     destinationInput.value = temp;
 }
 
-function submitForm() {
-    // 출발지 정보
-    var start_city_do = document.getElementById("start_city_do").value;
-    var start_gu_gun = document.getElementById("start_gu_gun").value;
-    var start_dong = document.getElementById("start_dong").value;
-    var start_bunji = document.getElementById("start_bunji").value;
-  
-    // 도착지 정보
-    var destination_city_do = document.getElementById("destination_city_do").value;
-    var destination_gu_gun = document.getElementById("destination_gu_gun").value;
-    var destination_dong = document.getElementById("destination_dong").value;
-    var destination_bunji = document.getElementById("destination_bunji").value;
-  
+function submitForm(event) {
+    // 기본 동작을 막아서 페이지 리로드 방지
+    event.preventDefault();
+
+    // 출발지와 도착지 주소 가져오기
+    var start_address = document.getElementById("start_address").value;
+    var end_address = document.getElementById("end_address").value;
+
     // URL 파라미터로 값을 넘김
     var url = "routefinder.html?";
-    url += "start_city_do=" + start_city_do + "&start_gu_gun=" + start_gu_gun + "&start_dong=" + start_dong + "&start_bunji=" + start_bunji;
-    url += "&destination_city_do=" + destination_city_do + "&destination_gu_gun=" + destination_gu_gun + "&destination_dong=" + destination_dong + "&destination_bunji=" + destination_bunji;
-  
-    window.location.href = "routefinder.html";
-  }
+    url += "start_address=" + encodeURIComponent(start_address);
+    url += "&end_address=" + encodeURIComponent(end_address);
+
+    // 페이지 이동
+    window.location.href = url;
+}

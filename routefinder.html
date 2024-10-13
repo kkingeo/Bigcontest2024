@@ -3,25 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>simpleMap</title>
-  <link rel="stylesheet" href="routefinder.css">
-  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <title>simpleMap & Route Finder</title>
+  <link rel="stylesheet" href="routefinder.css"> <!-- CSS 파일 불러오기 -->
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script> <!-- jQuery 라이브러리 -->
   <script src="https://apis.openapi.sk.com/tmap/jsv2?version=1&appKey=Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38"></script> <!-- Tmap API -->
   <script src="routefinder.js"></script> <!-- JavaScript 파일 불러오기 -->
 </head>
-<body onload="initTmap(); getQueryParams()">
-   <select id="city_do">
-      <option value="서울시" selected="selected">서울시</option>
-   </select>
-   <select id="gu_gun">
-      <option value="마포구" selected="selected">마포구</option>
-      <option value="서대문구">서대문구</option>
-   </select>
-   <select id="dong">
-      <option value="서교동" selected="selected">서교동</option>
-   </select>
-   <input type="text" id="bunji" name="bunji" value="1">
-   <button id="btn_select">적용하기</button>
-   <div id="map_div"></div>
+<body onload="initTmap(); getQueryParams(); findRoute()">
+ 
+  <!-- 출발지 정보 -->
+  <h1>출발지 주소</h1>
+  <input type="text" id="start_address" readonly>
+
+  <!-- 도착지 정보 -->
+  <h1>도착지 주소</h1>
+  <input type="text" id="end_address" readonly><br><br>
+
+
+  <h1>지도</h1>
+  <div id="map_div"></div> <!-- Tmap 지도 표시 -->
 </body>
 </html>
