@@ -3,28 +3,37 @@ import requests
 
 app = Flask(__name__)
 
-API_KEY = 'YOUR_TMAP_API_KEY'  # 지오코딩 및 길찾기용 앱키
+API_KEY = 'Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38'
 GEO_URL = "https://apis.openapi.sk.com/tmap/geo/geocoding"
 FULLTEXT_GEO_URL = "https://apis.openapi.sk.com/tmap/geo/fullAddrGeo"
 TRANSIT_ROUTE_URL = "https://apis.openapi.sk.com/transit/routes"
 CONGESTION_URL = "https://apis.openapi.sk.com/transit/puzzle/subway/congestion/stat/train"
 
+
 @app.route('/find_route', methods=['POST'])
 def find_route():
-    start_address = request.form.get('start_address')
-    end_address = request.form.get('end_address')
+    start_address = {
+        'city_do': request.form.get('start_city_do'),
+        'gu_gun': request.form.get('start_gu_gun'),
+        'dong': request.form.get('start_dong'),
+        'bunji': request.form.get('start_bunji')
+    }
 
-    # 1. 출발지 좌표 얻기 (Geocoding -> Full Text Geocoding)
+    end_address = {
+        'city_do': request.form.get('dest_city_do'),
+        'gu_gun': request.form.get('dest_gu_gun'),
+        'dong': request.form.get('dest_dong'),
+        'bunji': request.form.get('dest_bunji')
+    }
+
+    # 출발지와 도착지 좌표를 얻음
     start_coords = get_coordinates(start_address)
-    if not start_coords:
-        return jsonify({'error': 'Unable to find start location coordinates'}), 404
-
-    # 2. 도착지 좌표 얻기 (Geocoding -> Full Text Geocoding)
     end_coords = get_coordinates(end_address)
-    if not end_coords:
-        return jsonify({'error': 'Unable to find end location coordinates'}), 404
 
-    # 3. 길찾기 API 호출
+    if not start_coords or not end_coords:
+        return jsonify({'error': 'Unable to find coordinates'}), 404
+
+    # 길찾기 API 호출
     payload = {
         "startX": start_coords['lon'],
         "startY": start_coords['lat'],
@@ -32,10 +41,9 @@ def find_route():
         "endY": end_coords['lat'],
         "lang": 0,
         "format": "json",
-        "count": 10,
-        "searchDttm": "202301011200"
+        "count": 10  # 최대 10개의 경로 요청 가능
     }
-    
+
     headers = {
         "accept": "application/json",
         "content-type": "application/json",
@@ -43,30 +51,33 @@ def find_route():
     }
 
     try:
-        # 길찾기 API 호출
         response = requests.post(TRANSIT_ROUTE_URL, json=payload, headers=headers)
         route_data = response.json()  # 경로 데이터를 처리
-        
-        # 각 경로마다 지하철 역 리스트 생성
-        route_results = []
+
+        # 경로와 지하철역 리스트를 하나로 묶음
+        routes = []
         for route in route_data.get('features', []):
             if route['geometry']['type'] == 'LineString':
                 subway_stations = extract_subway_stations(route['properties'])
+                station_info = []
+
                 # 각 지하철역에 대해 혼잡도 가져오기
-                congestion_data = []
                 for station in subway_stations:
                     congestion = get_subway_congestion(station['line'], station['name'])
-                    congestion_data.append({
-                        'station': station['name'],
+                    station_info.append({
+                        'station_name': station['name'],
+                        'line': station['line'],
                         'congestion': congestion
                     })
-                route_results.append({
-                    'route': route['properties']['description'],
-                    'subway_stations': subway_stations,
-                    'congestion_data': congestion_data
+
+                # 경로와 지하철역 및 혼잡도 정보를 합침
+                routes.append({
+                    'route_description': route['properties']['description'],
+                    'subway_stations': station_info
                 })
 
-        return jsonify(route_results)
+        return jsonify({'routes': routes})
+
     except requests.RequestException as e:
         print(f"길찾기 API 요청 실패: {e}")
         return jsonify({'error': 'Unable to find the route'}), 500
@@ -103,11 +114,11 @@ def get_subway_congestion(line, station):
 
 def get_coordinates(address):
     """
-    주소를 입력받아 좌표를 반환하는 함수 (Geocoding -> Full Text Geocoding)
+    주소를 입력받아 좌표를 반환하는 함수 (지오코딩 -> 풀 텍스트 지오코딩)
     """
     # 1. 일반 지오코딩 시도
     geocode_response = geocoding(address)
-    
+
     if geocode_response and geocode_response.get('coordinateInfo') and geocode_response['coordinateInfo'].get('coordinate'):
         coordinates = geocode_response['coordinateInfo']['coordinate'][0]
         lat = coordinates.get('lat', coordinates.get('newLat', None))
@@ -117,7 +128,7 @@ def get_coordinates(address):
 
     # 2. 지오코딩 실패 시 풀 텍스트 지오코딩 시도
     fulltext_response = fulltext_geocoding(address)
-    
+
     if fulltext_response and fulltext_response.get('coordinateInfo') and fulltext_response['coordinateInfo'].get('coordinate'):
         coordinates = fulltext_response['coordinateInfo']['coordinate'][0]
         lat = coordinates.get('lat', coordinates.get('newLat', None))
@@ -129,17 +140,20 @@ def get_coordinates(address):
 
 
 def geocoding(address):
+    """
+    Tmap 일반 지오코딩 API 호출 함수
+    """
     headers = {
-        'appKey': API_KEY  
+        'appKey': API_KEY
     }
     params = {
         'version': 1,
         'format': 'json',
         'coordType': 'WGS84GEO',
         'addressType': 'A00',
-        'fullAddr': address
+        'fullAddr': f"{address['city_do']} {address['gu_gun']} {address['dong']} {address['bunji']}"
     }
-    
+
     try:
         response = requests.get(GEO_URL, headers=headers, params=params)
         return response.json()
@@ -149,16 +163,19 @@ def geocoding(address):
 
 
 def fulltext_geocoding(address):
+    """
+    Tmap 풀 텍스트 지오코딩 API 호출 함수
+    """
     headers = {
-        'appKey': API_KEY  
+        'appKey': API_KEY
     }
     params = {
         'version': 1,
         'format': 'json',
         'coordType': 'WGS84GEO',
-        'fullAddr': address  
+        'fullAddr': f"{address['city_do']} {address['gu_gun']} {address['dong']} {address['bunji']}"
     }
-    
+
     try:
         response = requests.get(FULLTEXT_GEO_URL, headers=headers, params=params)
         return response.json()
@@ -169,6 +186,3 @@ def fulltext_geocoding(address):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
