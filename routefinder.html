@@ -9,33 +9,18 @@
   <script src="https://apis.openapi.sk.com/tmap/jsv2?version=1&appKey=Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38"></script> <!-- Tmap API -->
   <script src="routefinder.js"></script> <!-- JavaScript 파일 불러오기 -->
 </head>
-<body onload="initTmap(); getQueryParams()">
-  <h1>경로 및 혼잡도 찾기</h1>
-
+<body onload="initTmap(); getQueryParams(); findRoute()">
+ 
   <!-- 출발지 정보 -->
-  <label for="start_address">출발지 주소:</label>
-  <select id="city_do">
-      <option value="서울시" selected="selected">서울시</option>
-  </select>
-  <select id="gu_gun">
-      <option value="마포구" selected="selected">마포구</option>
-      <option value="서대문구">서대문구</option>
-  </select>
-  <select id="dong">
-      <option value="서교동" selected="selected">서교동</option>
-  </select>
-  <input type="text" id="bunji" name="bunji" value="1"><br><br>
+  <h1>출발지 주소</h1>
+  <input type="text" id="start_address" readonly>
 
   <!-- 도착지 정보 -->
-  <label for="end_address">도착지 주소:</label>
-  <input type="text" id="end_address" placeholder="도착지 입력"><br><br>
+  <h1>도착지 주소</h1>
+  <input type="text" id="end_address" readonly><br><br>
 
-  <button id="btn_select" onclick="findRoute()">경로 찾기</button>
-  
-  <h2>결과</h2>
-  <pre id="route_results"></pre> <!-- 경로 결과 표시 -->
 
-  <h3>지도</h3>
+  <h1>지도</h1>
   <div id="map_div"></div> <!-- Tmap 지도 표시 -->
 </body>
 </html>
