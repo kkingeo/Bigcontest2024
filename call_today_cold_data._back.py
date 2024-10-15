@@ -13,7 +13,7 @@ def update_data():
     # 현재 날짜 구하기
     today = datetime.now().strftime('%Y-%m-%d')
     # 당일 날짜에 맞는 데이터 필터링
-    '''df를 모델에서 가져온 데이터의 이름으로 바꿔줘야 함'''
+    '''데이터 호출 필요, df를 모델에서 가져온 데이터의 이름으로 바꿔줘야 함'''
     latest_data = df[df['date'] == today]
     print(f"데이터가 {today}로 갱신되었습니다.")
 
@@ -23,6 +23,7 @@ scheduler.add_job(func=update_data, trigger="cron", hour=4, minute=0)
 scheduler.start()
 
 # API 엔드포인트: 갱신된 데이터를 프론트엔드로 전달
+'''프론트엔드에서 일정한 시간마다 요청을 보내도록 코드 작성'''
 @app.route('/get_data', methods=['GET'])
 def get_data():
     if latest_data is not None and not latest_data.empty:
