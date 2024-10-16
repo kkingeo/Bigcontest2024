@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>simpleMap & Route Finder</title>
+  <link rel="stylesheet" href="routefinder.css"> <!-- CSS 파일 불러오기 -->
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script> <!-- jQuery 라이브러리 -->
+  <script src="https://apis.openapi.sk.com/tmap/jsv2?version=1&appKey=Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38"></script> <!-- Tmap API -->
+  <script src="routefinder.js"></script> <!-- JavaScript 파일 불러오기 -->
+</head>
+<body>
+  <h1>길찾기 결과</h1>
+  
+  <div class="form-container">
+      <label for="start_address">출발지:</label>
+      <input type="text" id="start_address" placeholder="출발지 주소">
+      <br>
+      <label for="end_address">도착지:</label>
+      <input type="text" id="end_address" placeholder="도착지 주소">
+      
+      <button id="find_route_button">길찾기</button>
+  </div>
+  
+  <div id="map_div"></div> <!-- Tmap 지도 영역 -->
+  
+  <div id="route_description"></div> <!-- 경로 설명 -->
+  
+  <div id="subway_stations"></div> <!-- 지하철역 정보 표시 -->
+  
+</body>
+</html>
