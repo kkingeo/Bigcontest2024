@@ -12,15 +12,11 @@
 <body>
   <h1>길찾기 결과</h1>
   
-  <div class="form-container">
-      <label for="start_address">출발지:</label>
-      <input type="text" id="start_address" placeholder="출발지 주소">
-      <br>
-      <label for="end_address">도착지:</label>
-      <input type="text" id="end_address" placeholder="도착지 주소">
-      
-      <button id="find_route_button">길찾기</button>
-  </div>
+  <form id="routeForm">
+    <input type="text" id="start_address" name="start_address" placeholder="출발지 입력" required>
+    <input type="text" id="end_address" name="end_address" placeholder="도착지 입력" required>
+    <button type="submit">길찾기</button>
+  </form>
   
   <div id="map_div"></div> <!-- Tmap 지도 영역 -->
   
