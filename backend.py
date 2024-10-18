@@ -16,10 +16,14 @@ def find_route():
     start_address = request.form.get('start_address')
     end_address = request.form.get('end_address')
 
+    # Start와 End address 확인 로그
+    print(f"Received route request: Start Address: {start_address}, End Address: {end_address}")
+    
     start_coords = get_coordinates(start_address)
     end_coords = get_coordinates(end_address)
 
     if not start_coords or not end_coords:
+        print("Coordinates could not be found.")  # 디버깅 로그
         return jsonify({'error': 'Unable to find coordinates'}), 404
 
     payload = {
@@ -37,13 +41,20 @@ def find_route():
         "content-type": "application/json",
         "appKey": API_KEY
     }
+    
+    print(f"Payload for Tmap API: {payload}")  # 디버깅 로그
 
     try:
         response = requests.post(TRANSIT_ROUTE_URL, json=payload, headers=headers)
+        print(f"Tmap API Response Status Code: {response.status_code}")  # 응답 상태 코드 확인
+        
         route_data = response.json()
+        print(f"Tmap API Response Data: {route_data}")  # 응답 데이터 확인
+
 
         plan = route_data.get('plan')
         if not plan:
+            print("No plan data found in the API response.")  # 디버깅 로그
             return jsonify({'error': 'No plan data found'}), 500
 
         # 중복된 역 제거하기 위해 set 사용
@@ -83,9 +94,11 @@ def find_route():
             'stations': process_legs(it.get('legs', []))
         }, plan.get('itineraries', [])))
 
+        print(f"Routes processed: {routes}")  # 최종 처리된 경로 데이터 확인
         return jsonify({'routes': routes})
 
     except requests.RequestException as e:
+        print(f"Request Exception: {str(e)}")  # 요청 중 예외 발생 시 로그
         return jsonify({'error': 'Unable to find the route'}), 500
 
 
@@ -115,12 +128,18 @@ def get_coordinates(address):
     """
     주소를 입력받아 좌표를 반환하는 함수 (지오코딩 -> 풀 텍스트 지오코딩)
     """
+    print(f"Geocoding address: {address}")  # 디버깅 로그 추가
+    
     geocode_response = geocoding(address)
+    
+    print(f"Geocode response: {geocode_response}")  # API 응답 출력
+    
     if geocode_response and geocode_response.get('coordinateInfo') and geocode_response['coordinateInfo'].get('coordinate'):
         coordinates = geocode_response['coordinateInfo']['coordinate'][0]
         lat = coordinates.get('lat', coordinates.get('newLat', None))
         lon = coordinates.get('lon', coordinates.get('newLon', None))
         if lat and lon:
+            print(f"Coordinates found: lat={lat}, lon={lon}")  # 좌표 확인 로그 추가
             return {'lat': lat, 'lon': lon}
 
     fulltext_response = fulltext_geocoding(address)
@@ -131,6 +150,7 @@ def get_coordinates(address):
         if lat and lon:
             return {'lat': lat, 'lon': lon}
 
+    print("Coordinates not found")  # 좌표를 찾지 못한 경우
     return None
 
 
@@ -148,8 +168,10 @@ def geocoding(address):
 
     try:
         response = requests.get(GEO_URL, headers=headers, params=params)
+        print(f"Geocoding API URL: {response.url}")  # API 요청 URL을 확인하는 로그
         return response.json()
     except requests.RequestException as e:
+        print(f"Geocoding API request failed: {str(e)}")  # 요청 실패 로그
         return None
 
 
