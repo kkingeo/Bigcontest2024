@@ -28,7 +28,6 @@ def get_subway_congestion(route, station_name, cache):
     return {"status": "Normal", "congestionLevel": 1}
 
 @app.route('/find_route', methods=['POST'])
-@app.route('/find_route', methods=['POST'])
 def find_route():
     try:
         start_address = request.form.get('start_address')
@@ -70,6 +69,11 @@ def find_route():
         # 응답 데이터를 JSON으로 변환하고, 이를 출력
         route_data = response.json()
         print(f"Tmap API Response Data: {route_data}")  # 응답 데이터 출력
+        
+        # 경로가 제공되지 않는 경우 처리
+        if route_data.get('result') and route_data['result'].get('status') == 11:
+            print("출발지와 도착지가 너무 가까움")  # 디버깅 로그
+            return jsonify({'error': '출발지와 도착지가 너무 가까워 경로를 제공할 수 없습니다.'}), 400
 
         # 응답 데이터에서 'plan' 필드 확인
         plan = route_data.get('plan')
