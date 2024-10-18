@@ -1,0 +1,123 @@
+body {
+    background-color: beige;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 150vh;
+    margin: 0;
+    overflow-x: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.container {
+    width: 100%; /* 화면의 전체 너비를 사용하도록 설정 */
+    max-width: 1800px; /* 최대 너비를 1800px로 확장 */
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+.titlebox {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 50px; 
+}
+
+h1 {
+    font-size: 33px;
+    font-weight: bold;
+}
+
+h2 {
+    font-size: 16px;
+    font-weight: lighter;
+    margin-bottom: 30px;
+}
+
+.contentbox {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    align-items: stretch;
+}
+
+.contentbox div {
+    margin: 10px;
+    padding: 20px;
+}
+
+h3 {
+    font-size: 27px;
+    font-weight: bold;
+}
+
+.map {
+    flex: 1;
+    padding: 20px; /* 박스 내부 여백 */
+    border: 2px solid black; /* 테두리 설정 */
+    border-radius: 10px; /* 모서리를 둥글게 만들기 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 약간의 그림자 효과 */
+    background-color: white; /* 배경색 추가 */
+}
+
+.tableclass {
+    margin-top: 30px;
+}
+
+.tabletitle {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+table {
+    width: 100%;
+    margin: 0 auto;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid black;
+    padding: 10px;
+    text-align: center;
+}
+
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+td {
+    background-color: #fff;
+}
+
+.routefinder {
+    flex: 1;
+    padding: 20px; /* 박스 내부 여백 */
+    border: 2px solid black; /* 테두리 설정 */
+    border-radius: 10px; /* 모서리를 둥글게 만들기 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 약간의 그림자 효과 */
+    background-color: white; /* 배경색 추가 */
+}
+
+.inputbox {
+    text-align: center;
+}
+
+input {
+    margin: 10px;
+    padding: 15px;
+    width: 300px;
+    font-size: 16px;
+}
+
+button {
+    margin: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+}
