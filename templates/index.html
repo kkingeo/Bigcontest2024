@@ -130,14 +130,33 @@
     
                 <div class="inputbox">
                     <h4>출발지 입력</h4>
-                    <input type="text" id="start_address" placeholder="출발지 주소 입력" tabindex="1">
+                    <label for="start_city">시</label>
+                    <input type="text" id="start_city" placeholder="시/도 입력" tabindex="1">
+                    <label for="start_gu">구</label>
+                    <input type="text" id="start_gu" placeholder="군/구 입력" tabindex="2">
+                    <br>
+                    <label for="start_dong">동</label>
+                    <input type="text" id="start_dong" placeholder="동 입력" tabindex="3">
+                    
+                    <label for="start_bunji">번지</label>
+                    <input type="text" id="start_bunji" placeholder="번지 입력" tabindex="4">
                     <br>
                     <button onclick="switchPlaces()">⇅</button>
-                    <button id="find_route_button" onclick="submitForm(event)">검색</button> <!-- event 추가 -->
+                    <button id="find_route_button" onclick="submitForm(event)">검색</button>
                     <br>
                     <h4>도착지 입력</h4>
-                    <input type="text" id="end_address" placeholder="도착지 주소 입력" tabindex="2">
-                </div>
+                    <label for="end_city">시</label>
+                    <input type="text" id="end_city" placeholder="시/도 입력" tabindex="5">
+                    
+                    <label for="end_gu">구</label>
+                    <input type="text" id="end_gu" placeholder="군/구 입력" tabindex="6">
+                    <br>
+                    <label for="end_dong">동</label>
+                    <input type="text" id="end_dong" placeholder="동 입력" tabindex="7">
+                    
+                    <label for="end_bunji">번지</label>
+                    <input type="text" id="end_bunji" placeholder="번지 입력" tabindex="8">
+                </div>                              
                   
             </div>
         </div> 
