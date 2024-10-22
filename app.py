@@ -10,11 +10,29 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')  # templates 폴더에서 index.html 파일 렌더링
 
-@app.route('/routefinder')
+@app.route('/routefinder', methods=['GET'])
 def routefinder():
-    start_address = request.args.get('start_address')
-    end_address = request.args.get('end_address')
-    return render_template('routefinder.html', start_address=start_address, end_address=end_address)
+    # 시/도, 구/군, 동, 번지 값을 개별적으로 받기
+    start_city = request.args.get('start_city')
+    start_gu = request.args.get('start_gu')
+    start_dong = request.args.get('start_dong')
+    start_bunji = request.args.get('start_bunji')
+    
+    end_city = request.args.get('end_city')
+    end_gu = request.args.get('end_gu')
+    end_dong = request.args.get('end_dong')
+    end_bunji = request.args.get('end_bunji')
+    
+    # 각각의 값을 개별적으로 HTML 템플릿에 전달
+    return render_template('routefinder.html', 
+                           start_city=start_city, 
+                           start_gu=start_gu, 
+                           start_dong=start_dong, 
+                           start_bunji=start_bunji, 
+                           end_city=end_city, 
+                           end_gu=end_gu, 
+                           end_dong=end_dong, 
+                           end_bunji=end_bunji)
 
 
 if __name__ == '__main__':
