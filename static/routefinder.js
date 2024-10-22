@@ -72,13 +72,15 @@ function initMapWithMarkers() {
          map.fitBounds(bounds);
 
          // 경로 찾기 함수 호출
-         findRoute(); // 경로 찾기 실행
+         findRoute(startLat, startLon, destinationLat, destinationLon); // 경로 찾기 실행
       });
    });
 }
 
 // 주소를 전체 문자열로 변환한 후, 좌표 변환 API를 이용해 위도와 경도로 변환하는 함수
 function getCoordinates(address, callback) {
+   console.log("Sending route request to backend with coordinates:", address);  // 디버깅 로그 추가
+
    $.ajax({
       method: "GET",
       url: "https://apis.openapi.sk.com/tmap/geo/fullAddrGeo?version=1", // Tmap 좌표 변환 API
@@ -106,76 +108,21 @@ function getCoordinates(address, callback) {
 }
 
 
-document.addEventListener("DOMContentLoaded", function() {
-   var routeForm = document.getElementById('routeForm');
-   if (routeForm) {
-      routeForm.addEventListener('submit', function(e) {
-            e.preventDefault();  // 기본 폼 제출 방지
-
-           // 출발지와 도착지 주소를 개별 필드에서 가져오기
-            var start_address = {
-               city: document.getElementById('start_city').value,
-               gu: document.getElementById('start_gu').value,
-               dong: document.getElementById('start_dong').value,
-               bunji: document.getElementById('start_bunji').value
-            };
-
-            var end_address = {
-               city: document.getElementById('end_city').value,
-               gu: document.getElementById('end_gu').value,
-               dong: document.getElementById('end_dong').value,
-               bunji: document.getElementById('end_bunji').value
-            };
-
-           // 입력된 값 디버깅 로그 추가
-            console.log("Start Address:", start_address);
-            console.log("End Address:", end_address);
-
-           // 출발지 좌표 변환
-            getCoordinates(start_address, function(start_coords) {
-               if (!start_coords) {
-                  console.error("출발지 좌표 변환 실패");
-                  return;
-               }
-
-               // 도착지 좌표 변환
-            getCoordinates(end_address, function(end_coords) {
-                if (!end_coords) {
-                  console.error("도착지 좌표 변환 실패");
-                  return;
-               }
-
-                   // 좌표 변환 후 디버깅 로그 추가
-                  console.log("Sending route request to backend with coordinates:", start_coords.lat, start_coords.lon, end_coords.lat, end_coords.lon);
-
-                   // 변환된 좌표로 백엔드에 경로 탐색 요청
-                  findRoute(start_coords, end_coords);
-               });
-           });
-       });
-   } else {
-         console.error("routeForm 요소를 찾을 수 없습니다.");
-   }
-});
-
-
-
-
 
 // 경로 찾기 함수
-function findRoute(start_coords, end_coords) {
-   console.log("Sending route request to backend with coordinates:", start_coords, end_coords);  // 디버깅 로그 추가
+function findRoute(startLat, startLon, destinationLat, destinationLon) {
+   console.log("Finding route from", startLat, startLon, "to", destinationLat, destinationLon);  // 디버깅 로그 추가
 
    $.ajax({
       method: "POST",
       url: "http://127.0.0.1:5001/find_route",  // 백엔드의 경로 탐색 API 호출
       data: {
-         start_lat: start_coords.lat,
-         start_lon: start_coords.lon,
-         end_lat: end_coords.lat,
-         end_lon: end_coords.lon
-      },
-      success: function(response) {
+         start_lat: startLat,
+         start_lon: startLon,
+         end_lat: destinationLat,
+         end_lon: destinationLon
+
+      }, success: function(response) {
          if (response && response.plan && response.plan.itineraries && response.plan.itineraries.length > 0) {
             console.log("Route response received:", response);  // 디버깅 로그 추가
              
@@ -214,7 +161,6 @@ function findRoute(start_coords, end_coords) {
          console.error("경로 찾기 실패", error);
       }
    });
-   console.log("start_address:", startAddress, "end_address:", endAddress);
 }
 
 
