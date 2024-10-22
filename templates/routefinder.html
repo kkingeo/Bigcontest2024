@@ -13,9 +13,31 @@
   <h1>길찾기 결과</h1>
   
   <form id="routeForm">
-    <input type="text" id="start_address" name="start_address" placeholder="출발지 입력" required>
-    <input type="text" id="end_address" name="end_address" placeholder="도착지 입력" required>
-    <button type="submit">길찾기</button>
+    <h4>출발지 입력</h4>
+    <label for="start_city">시/도</label>
+    <input type="text" id="start_city" name="start_city" placeholder="시/도 입력" required>
+    <br>
+    <label for="start_gu">군/구</label>
+    <input type="text" id="start_gu" name="start_gu" placeholder="군/구 입력" required>
+    <br>
+    <label for="start_dong">동</label>
+    <input type="text" id="start_dong" name="start_dong" placeholder="동 입력" required>
+    <br>
+    <label for="start_bunji">번지</label>
+    <input type="text" id="start_bunji" name="start_bunji" placeholder="번지 입력" required>
+    <br>
+    <h4>도착지 입력</h4>
+    <label for="end_city">시/도</label>
+    <input type="text" id="end_city" name="end_city" placeholder="시/도 입력" required>
+    <br>
+    <label for="end_gu">군/구</label>
+    <input type="text" id="end_gu" name="end_gu" placeholder="군/구 입력" required>
+    <br>
+    <label for="end_dong">동</label>
+    <input type="text" id="end_dong" name="end_dong" placeholder="동 입력" required>
+    <br>
+    <label for="end_bunji">번지</label>
+    <input type="text" id="end_bunji" name="end_bunji" placeholder="번지 입력" required>
   </form>
   
   <div id="map_div"></div> <!-- Tmap 지도 영역 -->
