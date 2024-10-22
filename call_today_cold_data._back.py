@@ -1,37 +1,70 @@
-import pandas as pd
 from flask import Flask, jsonify
-from apscheduler.schedulers.background import BackgroundScheduler
-from datetime import datetime
+import pandas as pd
 
 app = Flask(__name__)
 
-# 이 변수에 최신 데이터를 저장
-latest_data = None
+# CSV 파일을 불러와서 JSON으로 변환해주는 함수
+def load_predictions_from_csv():
+    try:
+        # 고정된 CSV 파일 이름을 사용하여 파일 불러오기 (테스트 단계)
+        csv_file = 'predicted_cases_2023-09-30.csv'
+        df = pd.read_csv(csv_file)
+        
+        # 필요한 데이터만 JSON 형태로 변환
+        predictions = df.to_dict(orient='records')
+        return predictions
+    except FileNotFoundError:
+        return {'error': 'File not found'}, 404
 
-def update_data():
-    global latest_data
-    # 현재 날짜 구하기
-    today = datetime.now().strftime('%Y-%m-%d')
-    # 당일 날짜에 맞는 데이터 필터링
-    '''데이터 호출 필요, df를 모델에서 가져온 데이터의 이름으로 바꿔줘야 함'''
-    latest_data = df[df['date'] == today]
-    print(f"데이터가 {today}로 갱신되었습니다.")
-
-# 스케줄러 설정 (매일 오전 4시에 데이터 갱신)
-scheduler = BackgroundScheduler()
-scheduler.add_job(func=update_data, trigger="cron", hour=4, minute=0)
-scheduler.start()
-
-# API 엔드포인트: 갱신된 데이터를 프론트엔드로 전달
-'''프론트엔드에서 일정한 시간마다 요청을 보내도록 코드 작성'''
-@app.route('/get_data', methods=['GET'])
-def get_data():
-    if latest_data is not None and not latest_data.empty:
-        result = latest_data.to_dict(orient='records')
-        return jsonify(result)
-    else:
-        return jsonify({'message': 'No data for today.'}), 503
+# 프론트엔드에서 GET 요청으로 데이터를 받아갈 수 있게 만듦
+@app.route('/predicted_cases', methods=['GET'])
+def get_predicted_cases():
+    # 테스트 단계에서는 target_date를 받지 않고 고정된 파일을 사용
+    predictions = load_predictions_from_csv()
+    
+    if 'error' in predictions:
+        return jsonify(predictions), 404
+    
+    # JSON 형태로 데이터를 반환
+    return jsonify(predictions), 200
 
 if __name__ == '__main__':
-    update_data()  # 서버 시작 시 한 번 데이터를 갱신
     app.run(debug=True)
+
+'''
+# method = Post 버전 
+
+from flask import Flask, jsonify
+import pandas as pd
+
+app = Flask(__name__)
+
+# CSV 파일을 불러와서 JSON으로 변환해주는 함수
+def load_predictions_from_csv():
+    try:
+        # 고정된 CSV 파일 이름을 사용하여 파일 불러오기 (테스트 단계)
+        csv_file = 'predicted_cases_2023-09-30.csv'
+        df = pd.read_csv(csv_file)
+        
+        # 필요한 데이터만 JSON 형태로 변환
+        predictions = df.to_dict(orient='records')
+        return predictions
+    except FileNotFoundError:
+        return {'error': 'File not found'}, 404
+
+# 프론트엔드에서 POST 요청으로 데이터를 받아갈 수 있게 만듦
+@app.route('/predicted_cases', methods=['POST'])
+def get_predicted_cases():
+    # 고정된 CSV 파일을 사용하여 데이터 반환
+    predictions = load_predictions_from_csv()
+    
+    if 'error' in predictions:
+        return jsonify(predictions), 404
+    
+    # JSON 형태로 데이터를 반환
+    return jsonify(predictions), 200
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+'''
