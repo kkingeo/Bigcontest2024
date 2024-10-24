@@ -3,14 +3,12 @@ import requests
 from datetime import datetime
 import json
 import urllib.parse
-from datetime import datetime
-
 
 '''대중교통 길찾기 API 호출 및 경로 정보 저장'''
 
 app = Flask(__name__)
 
-API_KEY = 'YEWVxfrK4j8xTNQZURJ4z1Te4JTZs26v45fgmfn7'
+API_KEY = 'YOUR_TMAP_API_KEY'
 TMAP_URL = "https://apis.openapi.sk.com/transit/routes"
 
 # 전역 변수로 선언
@@ -49,55 +47,60 @@ def find_route():
     try:
         response = requests.post(TMAP_URL, json=payload, headers=headers)
         route_data = response.json()  # 전역 변수에 할당
+        if route_data:
+            extract_subway_info(route_data)  # 경로 정보 추출
         return jsonify(route_data), 200
     except requests.RequestException as e:
         return jsonify({"error": "Unable to find route"}), 500
 
+
+# 경로 정보에서 지하철 관련 경로만 추출
+def extract_subway_info(route_data):
+    # 'itineraries'는 경로 정보를 담고 있는 배열
+    itineraries = route_data['metaData']['plan']['itineraries']
+    
+    # 경로별 지하철 정보를 저장할 딕셔너리
+    all_subway_info = {}
+
+    # 각 'itinerary'에서 legs 확인
+    for idx, itinerary in enumerate(itineraries):
+        
+        # 경로에 포함된 지하철역 이름과 호선 정보를 담을 리스트
+        subway_station_info = []
+        
+        for leg in itinerary['legs']:
+            # 지하철 경로인지 확인
+            if leg['mode'] == 'SUBWAY':
+                route_name = leg['route']  # 호선 정보
+                if '수도권' in route_name or '(급행)' in route_name:
+                    route_name = route_name.replace('수도권', '').replace('(급행)', '').strip()
+                
+                # 'passStopList'에서 지하철역 목록 추출
+                for station in leg['passStopList']['stationList']:
+                    station_name = station['stationName']
+                    
+                    # 역 이름 뒤에 '역'을 붙임 (중복 방지 포함)
+                    if not station_name.endswith('역'):
+                        station_name += '역'
+                    
+                    # 역 이름과 호선 정보 함께 저장
+                    subway_station_info.append({
+                        'station_name': station_name,
+                        'line': route_name
+                    })
+        
+        # 지하철 정보가 있는 경로만 저장
+        if subway_station_info:
+            all_subway_info[f'route_{idx + 1}'] = subway_station_info
+    
+    # 결과 출력 (프론트엔드에 보내거나 다른 작업 가능)
+    print(all_subway_info)
+    return all_subway_info
+
+
 if __name__ == '__main__':
     app.run(debug=True)
 
-'''경로 정보에서 지하철 관련 경로만 추출'''
-
-# 'itineraries'는 경로 정보를 담고 있는 배열
-itineraries = route_data['metaData']['plan']['itineraries'] 
-### 실제로는 data(X) route_data(O) data는 테스트용! ###
-
-# 경로별 지하철 정보를 저장할 딕셔너리
-all_subway_info = {}
-
-# 각 'itinerary'에서 legs 확인
-for idx, itinerary in enumerate(itineraries):
-    
-    # 경로에 포함된 지하철역 이름과 호선 정보를 담을 리스트
-    subway_station_info = []
-    
-    for leg in itinerary['legs']:
-        # 지하철 경로인지 확인
-        if leg['mode'] == 'SUBWAY':
-            route_name = leg['route']  # 호선 정보
-            if '수도권' in route_name or '(급행)' in route_name:
-                route_name = route_name.replace('수도권', '').replace('(급행)', '').strip()
-            
-            # 'passStopList'에서 지하철역 목록 추출
-            for station in leg['passStopList']['stationList']:
-                station_name = station['stationName']
-                
-                # 역 이름 뒤에 '역'을 붙임 (중복 방지 포함) (지하철 혼잡도 데이터 입력 형식 맞추기 위함)
-                if not station_name.endswith('역'):
-                    station_name += '역'
-                
-                # 역 이름과 호선 정보 함께 저장
-                subway_station_info.append({
-                    'station_name': station_name,
-                    'line': route_name
-                })
-    
-    # 지하철 정보가 있는 경로만 저장
-    if subway_station_info:
-        all_subway_info[f'route_{idx + 1}'] = subway_station_info
-
-# 결과 출력
-# print(all_subway_info)
 
 '''지하철 혼잡도 API 호출, 경로별로 가장 가까운 시간대의 지하철역 혼잡도 전송'''
 
