@@ -8,7 +8,7 @@ app = Flask(__name__)
 # index.html 렌더링
 @app.route('/')
 def index():
-    return render_template('index.html')  # templates 폴더에서 index.html 파일 렌더링
+    return render_template('index.html')
 
 @app.route('/routefinder', methods=['GET'])
 def routefinder():
