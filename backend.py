@@ -46,14 +46,22 @@ def find_route():
     # Tmap API 요청
     try:
         response = requests.post(TMAP_URL, json=payload, headers=headers)
-        route_data = response.json()  # 전역 변수에 할당
-
-        # 지하철 경로 정보를 추출하여 all_subway_info에 저장
-        all_subway_info = extract_subway_info(route_data)
-
-        return jsonify(route_data), 200
+        
+        # 응답 상태 코드와 내용을 출력해 디버깅
+        print(f"Response Status Code: {response.status_code}")  # 상태 코드 출력
+        print("Response JSON:")  # 응답 데이터 출력
+        print(response.text)  # 전체 응답을 문자열로 출력 (디버깅용)
+        
+        if response.status_code == 200:
+            route_data = response.json()  # 전역 변수에 할당
+            print("Route Data:", route_data)  # 제대로 된 응답 데이터인지 확인
+            return jsonify(route_data), 200
+        else:
+            return jsonify({"error": "Tmap API request failed"}), response.status_code
     except requests.RequestException as e:
+        print(f"Request failed: {e}")  # 예외 상황 출력
         return jsonify({"error": "Unable to find route"}), 500
+
 
 # 경로 데이터에서 지하철 정보 추출하는 함수
 def extract_subway_info(route_data):
