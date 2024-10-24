@@ -1,11 +1,13 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Flask-CORS 임포트
 import requests
 from datetime import datetime
 import urllib.parse
 
 app = Flask(__name__)
+CORS(app)
 
-API_KEY = 'YEWVxfrK4j8xTNQZURJ4z1Te4JTZs26v45fgmfn7'
+API_KEY = 'gDkNTudIim8P9UUU18StX8dvwGql27Ib4sh7fb9y'
 TMAP_URL = "https://apis.openapi.sk.com/transit/routes"
 
 # 전역 변수로 선언
@@ -184,7 +186,7 @@ def send_congestion_data():
     return jsonify(congestion_results)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
 
 '''
 # 프론트엔드로 혼잡도 데이터를 전송하는 API 엔드포인트
