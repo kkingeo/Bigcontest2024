@@ -116,15 +116,17 @@ function findRoute(startLat, startLon, destinationLat, destinationLon) {
    $.ajax({
       method: "POST",
       url: "http://127.0.0.1:5001/find_route",  // 백엔드의 경로 탐색 API 호출
-      data: {
+      contentType: "application/json",
+      data: JSON.stringify({
          start_lat: startLat,
          start_lon: startLon,
          end_lat: destinationLat,
          end_lon: destinationLon
 
-      }, success: function(response) {
+      }), success: function(response) {
+         console.log("Received response:", response);  // 응답 전체 출력
          if (response && response.plan && response.plan.itineraries && response.plan.itineraries.length > 0) {
-            console.log("Route response received:", response);  // 디버깅 로그 추가
+            console.log("Valid route response received:", response.plan.itineraries);  // 디버깅 로그 추가
              
              // 경로 선택 UI 생성
             var routeSelectionDiv = document.getElementById('routeSelection');
@@ -135,7 +137,8 @@ function findRoute(startLat, startLon, destinationLat, destinationLon) {
                // 경로 요약 정보를 표시할 요소 생성 (예: 총 시간, 요금)
                var routeSummary = document.createElement('div');
                routeSummary.innerHTML = "경로 " + (index + 1) + ": 총 시간 - " + itinerary.totalTime + "초, 요금 - " + itinerary.fare.regular.totalFare + "원";
-               
+               routeSelectionDiv.appendChild(routeSummary);
+
                // 혼잡도 정보를 추가할 요소 생성
                var congestionInfo = document.createElement('div');
                congestionInfo.innerHTML = getCongestionInfo(itinerary.legs);  // 혼잡도 정보 추가
