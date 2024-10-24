@@ -1,39 +1,42 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # CORS 추가
 import requests
+from datetime import datetime
+import json
+import urllib.parse
+from datetime import datetime
+
+
+'''대중교통 길찾기 API 호출 및 경로 정보 저장'''
 
 app = Flask(__name__)
-CORS(app)  # 모든 출처에서의 요청을 허용
 
-API_KEY = 'Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38'
-GEO_URL = "https://apis.openapi.sk.com/tmap/geo/geocoding"
-FULLTEXT_GEO_URL = "https://apis.openapi.sk.com/tmap/geo/fullAddrGeo"
-TRANSIT_ROUTE_URL = "https://apis.openapi.sk.com/transit/routes"
+API_KEY = 'YEWVxfrK4j8xTNQZURJ4z1Te4JTZs26v45fgmfn7'
+TMAP_URL = "https://apis.openapi.sk.com/transit/routes"
 
+# 전역 변수로 선언
+route_data = None
 
 @app.route('/find_route', methods=['POST'])
 def find_route():
-    start_address = request.form.get('start_address')
-    end_address = request.form.get('end_address')
-
-    # Start와 End address 확인 로그
-    print(f"Received route request: Start Address: {start_address}, End Address: {end_address}")
+    global route_data  # 전역 변수 사용 선언
     
-    start_coords = get_coordinates(start_address)
-    end_coords = get_coordinates(end_address)
+    # 프론트엔드에서 경도, 위도 좌표를 받아옴
+    data = request.get_json()
+    start_lon = data.get('start_lon')
+    start_lat = data.get('start_lat')
+    end_lon = data.get('end_lon')
+    end_lat = data.get('end_lat')
 
-    if not start_coords or not end_coords:
-        print("Coordinates could not be found.")  # 디버깅 로그
-        return jsonify({'error': 'Unable to find coordinates'}), 404
-
+    # Tmap API에 요청할 페이로드
     payload = {
-        "startX": start_coords['lon'],
-        "startY": start_coords['lat'],
-        "endX": end_coords['lon'],
-        "endY": end_coords['lat'],
+        "startX": start_lon,
+        "startY": start_lat,
+        "endX": end_lon,
+        "endY": end_lat,
         "lang": 0,
         "format": "json",
-        "count": 10
+        "count": 10,
+        "searchDttm": datetime.now().strftime("%Y%m%d%H%M")
     }
 
     headers = {
@@ -41,157 +44,150 @@ def find_route():
         "content-type": "application/json",
         "appKey": API_KEY
     }
-    
-    print(f"Payload for Tmap API: {payload}")  # 디버깅 로그
 
+    # Tmap API 요청
     try:
-        response = requests.post(TRANSIT_ROUTE_URL, json=payload, headers=headers)
-        print(f"Tmap API Response Status Code: {response.status_code}")  # 응답 상태 코드 확인
-        
-        route_data = response.json()
-        print(f"Tmap API Response Data: {route_data}")  # 응답 데이터 확인
-
-
-        plan = route_data.get('plan')
-        if not plan:
-            print("No plan data found in the API response.")  # 디버깅 로그
-            return jsonify({'error': 'No plan data found'}), 500
-
-        # 중복된 역 제거하기 위해 set 사용
-        all_stations = set()
-        congestion_cache = {}
-
-        def process_legs(legs):
-            station_info = []
-            for leg in filter(lambda l: l['mode'] == 'SUBWAY', legs):
-                station_list = leg['passStopList']['stationList']
-                for station in station_list:
-                    station_key = f"{station['stationName']}_{leg['route']}"
-                    if station_key not in all_stations:
-                        all_stations.add(station_key)
-                        congestion = get_subway_congestion(leg['route'], station['stationName'], congestion_cache)
-                        station_info.append({
-                            'station_name': station['stationName'],
-                            'lon': station['lon'],
-                            'lat': station['lat'],
-                            'congestion': congestion
-                        })
-
-                linestring = leg.get('passShape', {}).get('linestring', '')
-                station_info.append({
-                    'start_station': leg['start']['name'],
-                    'end_station': leg['end']['name'],
-                    'distance': leg['distance'],
-                    'total_time': leg['sectionTime'],
-                    'linestring': linestring
-                })
-
-            return station_info
-
-        routes = list(map(lambda it: {
-            'walk_distance': it.get('walkDistance'),
-            'total_time': it.get('totalTime'),
-            'stations': process_legs(it.get('legs', []))
-        }, plan.get('itineraries', [])))
-
-        print(f"Routes processed: {routes}")  # 최종 처리된 경로 데이터 확인
-        return jsonify({'routes': routes})
-
+        response = requests.post(TMAP_URL, json=payload, headers=headers)
+        route_data = response.json()  # 전역 변수에 할당
+        return jsonify(route_data), 200
     except requests.RequestException as e:
-        print(f"Request Exception: {str(e)}")  # 요청 중 예외 발생 시 로그
-        return jsonify({'error': 'Unable to find the route'}), 500
+        return jsonify({"error": "Unable to find route"}), 500
 
+if __name__ == '__main__':
+    app.run(debug=True)
 
-def get_subway_congestion(line, station, cache):
-    """
-    각 지하철 역에 대해 실시간 혼잡도를 가져오는 함수. 중복 호출 방지를 위해 cache 사용.
-    """
-    if station in cache:
-        return cache[station]
+'''경로 정보에서 지하철 관련 경로만 추출'''
 
-    url = f"https://apis.openapi.sk.com/transit/puzzle/subway/congestion/stat/train?routeNm={line}&stationNm={station}"
+# 'itineraries'는 경로 정보를 담고 있는 배열
+itineraries = route_data['metaData']['plan']['itineraries'] 
+### 실제로는 data(X) route_data(O) data는 테스트용! ###
+
+# 경로별 지하철 정보를 저장할 딕셔너리
+all_subway_info = {}
+
+# 각 'itinerary'에서 legs 확인
+for idx, itinerary in enumerate(itineraries):
+    
+    # 경로에 포함된 지하철역 이름과 호선 정보를 담을 리스트
+    subway_station_info = []
+    
+    for leg in itinerary['legs']:
+        # 지하철 경로인지 확인
+        if leg['mode'] == 'SUBWAY':
+            route_name = leg['route']  # 호선 정보
+            if '수도권' in route_name or '(급행)' in route_name:
+                route_name = route_name.replace('수도권', '').replace('(급행)', '').strip()
+            
+            # 'passStopList'에서 지하철역 목록 추출
+            for station in leg['passStopList']['stationList']:
+                station_name = station['stationName']
+                
+                # 역 이름 뒤에 '역'을 붙임 (중복 방지 포함) (지하철 혼잡도 데이터 입력 형식 맞추기 위함)
+                if not station_name.endswith('역'):
+                    station_name += '역'
+                
+                # 역 이름과 호선 정보 함께 저장
+                subway_station_info.append({
+                    'station_name': station_name,
+                    'line': route_name
+                })
+    
+    # 지하철 정보가 있는 경로만 저장
+    if subway_station_info:
+        all_subway_info[f'route_{idx + 1}'] = subway_station_info
+
+# 결과 출력
+# print(all_subway_info)
+
+'''지하철 혼잡도 API 호출, 경로별로 가장 가까운 시간대의 지하철역 혼잡도 전송'''
+
+app = Flask(__name__)
+
+# all_subway_info에서 경로별로 노선명과 역명칭을 가져와서 차례대로 인코딩 및 API 호출
+def get_congestion_data(all_subway_info):
+    congestion_results = {}
+    
+    # 현재 시간 반영 (요일과 시간)
+    now = datetime.now()
+    day_of_week = now.strftime('%a').upper()  # 요일을 MON, TUE 형식으로 반환
+    current_hour = int(now.strftime('%H'))  # 현재 시간을 24시간 형식으로 반환
+    current_minute = int(now.strftime('%M'))  # 현재 분을 숫자로 반환
+
+    # 시간 범위 제한 (05 ~ 23시)
+    if current_hour < 5:
+        current_hour = 5
+    elif current_hour > 23:
+        current_hour = 23
+    hour_str = f"{current_hour:02d}"  # 두 자리 형식으로 맞추기
+
     headers = {
         "accept": "application/json",
-        "appKey": API_KEY
+        "appKey": API_KEY  # 실제 Tmap API Key 입력
     }
 
-    try:
-        response = requests.get(url, headers=headers)
-        congestion_data = response.json()
-        cache[station] = congestion_data  # 캐시에 저장
-        return congestion_data
-    except requests.RequestException as e:
-        return {'error': 'Unable to get congestion data'}
+    # all_subway_info에서 경로별로 노선명과 역명칭을 가져와서 API 호출
+    for route, stations in all_subway_info.items():
+        route_results = []  # 경로별로 혼잡도 데이터를 저장할 리스트
+
+        for station_info in stations:
+            route_name = station_info['line']
+            station_name = station_info['station_name']
+
+            # URL 인코딩 (노선명과 역명칭)
+            encoded_route_name = urllib.parse.quote(route_name)
+            encoded_station_name = urllib.parse.quote(station_name)
+
+            # 완성된 URL
+            url = f"https://apis.openapi.sk.com/transit/puzzle/subway/congestion/stat/train?routeNm={encoded_route_name}&stationNm={encoded_station_name}&dow={day_of_week}&hh={hour_str}"
+
+            # Tmap API 호출
+            try:
+                response = requests.get(url, headers=headers)
+                if response.status_code == 200:
+                    # 응답 데이터 저장
+                    congestion_data = response.json()
+
+                    # 현재 시간에 가장 가까운 데이터를 찾기
+                    if 'stat' in congestion_data['contents']:
+                        closest_congestion = None
+                        closest_time_diff = float('inf')
+
+                        for stat in congestion_data['contents']['stat']:
+                            for data in stat['data']:
+                                hh = int(data['hh'])
+                                mm = int(data['mm'])
+
+                                time_diff = abs((current_hour * 60 + current_minute) - (hh * 60 + mm))
+
+                                if time_diff < closest_time_diff:
+                                    closest_time_diff = time_diff
+                                    closest_congestion = {
+                                        'station_name': station_name,
+                                        'route_name': route_name,
+                                        'congestion_data': data['congestionTrain']
+                                    }
+                        if closest_congestion:
+                            route_results.append(closest_congestion)
+            except requests.RequestException as e:
+                print(f"Request failed for station: {station_name}, route: {route_name}")
+
+        # 경로별 결과를 딕셔너리에 추가
+        if route_results:
+            congestion_results[route] = route_results
+
+    return congestion_results
 
 
-def get_coordinates(address):
-    """
-    주소를 입력받아 좌표를 반환하는 함수 (지오코딩 -> 풀 텍스트 지오코딩)
-    """
-    print(f"Geocoding address: {address}")  # 디버깅 로그 추가
+# 프론트엔드로 혼잡도 데이터를 전송하는 API 엔드포인트
+@app.route('/get_congestion', methods=['GET'])
+
+def send_congestion_data():
+    # 혼잡도 데이터 가져오기
+    congestion_results = get_congestion_data(all_subway_info)
     
-    geocode_response = geocoding(address)
-    
-    print(f"Geocode response: {geocode_response}")  # API 응답 출력
-    
-    if geocode_response and geocode_response.get('coordinateInfo') and geocode_response['coordinateInfo'].get('coordinate'):
-        coordinates = geocode_response['coordinateInfo']['coordinate'][0]
-        lat = coordinates.get('lat', coordinates.get('newLat', None))
-        lon = coordinates.get('lon', coordinates.get('newLon', None))
-        if lat and lon:
-            print(f"Coordinates found: lat={lat}, lon={lon}")  # 좌표 확인 로그 추가
-            return {'lat': lat, 'lon': lon}
-
-    fulltext_response = fulltext_geocoding(address)
-    if fulltext_response and fulltext_response.get('coordinateInfo') and fulltext_response['coordinateInfo'].get('coordinate'):
-        coordinates = fulltext_response['coordinateInfo']['coordinate'][0]
-        lat = coordinates.get('lat', coordinates.get('newLat', None))
-        lon = coordinates.get('lon', coordinates.get('newLon', None))
-        if lat and lon:
-            return {'lat': lat, 'lon': lon}
-
-    print("Coordinates not found")  # 좌표를 찾지 못한 경우
-    return None
-
-
-def geocoding(address):
-    headers = {
-        'appKey': API_KEY
-    }
-    params = {
-        'version': 1,
-        'format': 'json',
-        'coordType': 'WGS84GEO',
-        'addressType': 'A00',
-        'fullAddr': address
-    }
-
-    try:
-        response = requests.get(GEO_URL, headers=headers, params=params)
-        print(f"Geocoding API URL: {response.url}")  # API 요청 URL을 확인하는 로그
-        return response.json()
-    except requests.RequestException as e:
-        print(f"Geocoding API request failed: {str(e)}")  # 요청 실패 로그
-        return None
-
-
-def fulltext_geocoding(address):
-    headers = {
-        'appKey': API_KEY
-    }
-    params = {
-        'version': 1,
-        'format': 'json',
-        'coordType': 'WGS84GEO',
-        'fullAddr': address
-    }
-
-    try:
-        response = requests.get(FULLTEXT_GEO_URL, headers=headers, params=params)
-        return response.json()
-    except requests.RequestException as e:
-        return None
+    # 프론트엔드로 JSON 형식으로 반환
+    return jsonify(congestion_results)
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    app.run(debug=True)
