@@ -101,11 +101,6 @@ for idx, itinerary in enumerate(itineraries):
 
 '''지하철 혼잡도 API 호출, 경로별로 가장 가까운 시간대의 지하철역 혼잡도 전송'''
 
-import requests
-import urllib.parse
-from datetime import datetime
-from flask import Flask, jsonify
-
 app = Flask(__name__)
 
 # all_subway_info에서 경로별로 노선명과 역명칭을 가져와서 차례대로 인코딩 및 API 호출
@@ -185,6 +180,7 @@ def get_congestion_data(all_subway_info):
 
 # 프론트엔드로 혼잡도 데이터를 전송하는 API 엔드포인트
 @app.route('/get_congestion', methods=['GET'])
+
 def send_congestion_data():
     # 혼잡도 데이터 가져오기
     congestion_results = get_congestion_data(all_subway_info)
