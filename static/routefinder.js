@@ -1,5 +1,5 @@
 var map, marker1, marker2, routeLine;
-var tmapApiKey = 'gDkNTudIim8P9UUU18StX8dvwGql27Ib4sh7fb9y';
+var tmapApiKey = 'Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38';
 var markers = [];
 var polylines = [];
 
@@ -116,97 +116,86 @@ function findRoute(startLat, startLon, destinationLat, destinationLon) {
    $.ajax({
       method: "POST",
       url: "http://127.0.0.1:5001/find_route",  // 백엔드의 경로 탐색 API 호출
-      contentType: "application/json",
-      data: JSON.stringify({
+      contentType: "application/json",  // POST 요청에 JSON 형식 명시
+      data: JSON.stringify({  // 데이터를 JSON으로 전송
          start_lat: startLat,
          start_lon: startLon,
          end_lat: destinationLat,
          end_lon: destinationLon
+      }),
+      success: function(response) {
+         console.log("Received response:", response);  // 전체 응답 데이터를 콘솔에 출력 (응답 전체 확인)
+         
+         // 응답에서 metaData -> plan -> itineraries 참조
+         if (response.metaData && response.metaData.plan && response.metaData.plan.itineraries && response.metaData.plan.itineraries.length > 0) {
+            console.log("Valid route response received:", response.metaData.plan.itineraries);  // 유효한 경로 응답 확인
 
-      }), success: function(response) {
-         console.log("Received response:", response);  // 응답 전체 출력
-         if (response && response.plan && response.plan.itineraries && response.plan.itineraries.length > 0) {
-            console.log("Valid route response received:", response.plan.itineraries);  // 디버깅 로그 추가
-             
-             // 경로 선택 UI 생성
+            // 경로 선택 UI 생성
             var routeSelectionDiv = document.getElementById('routeSelection');
             routeSelectionDiv.innerHTML = '';  // 이전 내용 제거
              
-             // 경로 리스트 생성
-            response.plan.itineraries.forEach(function(itinerary, index) {
+            // 경로 리스트 생성
+            response.metaData.plan.itineraries.forEach(function(itinerary, index) {
+               console.log("Processing itinerary:", itinerary);  // 각 경로를 디버깅하기 위한 로그 추가
+
                // 경로 요약 정보를 표시할 요소 생성 (예: 총 시간, 요금)
                var routeSummary = document.createElement('div');
                routeSummary.innerHTML = "경로 " + (index + 1) + ": 총 시간 - " + itinerary.totalTime + "초, 요금 - " + itinerary.fare.regular.totalFare + "원";
-               routeSelectionDiv.appendChild(routeSummary);
-
+               
                // 혼잡도 정보를 추가할 요소 생성
                var congestionInfo = document.createElement('div');
                congestionInfo.innerHTML = getCongestionInfo(itinerary.legs);  // 혼잡도 정보 추가
+               console.log("Congestion info added:", congestionInfo);  // 혼잡도 정보를 추가한 후 확인
 
-                 // 경로 선택 버튼 생성
+               // 경로 선택 버튼 생성
                var routeButton = document.createElement('button');
                routeButton.innerHTML = "이 경로 선택";
                routeButton.onclick = function() {
+                  console.log("Selected route legs:", itinerary.legs);  // 경로 선택 시 다리 정보 확인
                   drawRoute(itinerary.legs);  // 경로의 세부 단계를 그리는 함수
                   processCongestionData(itinerary.legs);  // 혼잡도 데이터 처리
                };
                  
-                 // UI에 추가
+               // UI에 추가
                routeSelectionDiv.appendChild(routeSummary);
                routeSelectionDiv.appendChild(congestionInfo);  // 혼잡도 정보 추가
                routeSelectionDiv.appendChild(routeButton);
             });
          } else {
-            console.error("경로 탐색 결과가 없습니다.", response);  // 오류가 발생했을 경우의 로그
+            console.error("경로 탐색 결과가 없습니다.", response);  // 오류가 발생했을 경우의 상세 로그 추가
          }
       },
       error: function(error) {
-         console.error("경로 찾기 실패", error);
+         console.error("경로 찾기 실패", error);  // 에러 발생 시 상세 로그 출력
       }
    });
 }
-
 
 
 function drawRoute(legs) {
-   removeMarkers();  // 기존 마커 삭제
-   removePolylines();  // 기존 경로 삭제
+   // 각 구간을 선으로 연결할 경로 좌표 배열
+   let routeCoordinates = [];
 
    legs.forEach(function(leg) {
-      if (leg.mode === 'WALK') {
-         console.log("도보 경로 그리기:", leg.steps);
-         // 도보 경로에 대한 로직 추가 (지도 API 등 활용)
-      } else if (leg.mode === 'SUBWAY') {
-         console.log("지하철 경로 그리기:", leg.passStopList.stationList);
-         // 지하철 경로에 대한 로직 추가 (지도 API 등 활용)
-      }
+       if (leg.mode === 'SUBWAY' && leg.passStopList && leg.passStopList.stationList) {
+           leg.passStopList.stationList.forEach(function(station) {
+               // 각 역의 좌표를 배열에 추가
+               if (station.lat && station.lon) {
+                   routeCoordinates.push(new Tmapv2.LatLng(station.lat, station.lon));
+               }
+           });
+       }
+   });
 
-      var startLat = leg.startLat || leg.startLocation.lat;  // startLocation에서 lat 값 추출
-      var startLon = leg.startLon || leg.startLocation.lon;  // startLocation에서 lon 값 추출
-      var endLat = leg.endLat || leg.endLocation.lat;        // endLocation에서 lat 값 추출
-      var endLon = leg.endLon || leg.endLocation.lon;        // endLocation에서 lon 값 추출
-
-      // 출발지 마커 추가
-      var marker1 = new Tmapv2.Marker({
-         position: new Tmapv2.LatLng(leg.start.lat, leg.start.lon),  // 출발지 좌표 설정
-         map: map
-      });
-      markers.push(marker1);  // 마커 리스트에 추가
-
-      // 도착지 마커 추가
-      var marker2 = new Tmapv2.Marker({
-         position: new Tmapv2.LatLng(leg.end.lat, leg.end.lon),  // 도착지 좌표 설정
-         map: map
-      });
-      markers.push(marker2);  // 마커 리스트에 추가
-
-      // 지도의 범위를 두 마커가 모두 보이도록 조정
-      var bounds = new Tmapv2.LatLngBounds();
-      bounds.extend(new Tmapv2.LatLng(leg.start.lat, leg.start.lon));
-      bounds.extend(new Tmapv2.LatLng(leg.end.lat, leg.end.lon));
-      map.fitBounds(bounds);
+   // Tmapv2.Polyline 객체를 생성하여 선으로 경로를 그리기
+   const routeLine = new Tmapv2.Polyline({
+       path: routeCoordinates, // 경로 좌표 배열
+       strokeColor: "#FF0000", // 선 색상
+       strokeWeight: 6, // 선 굵기
+       map: map // 지도 객체
    });
 }
+
 
 
 // 받은 경로 데이터를 이 함수로 전달하여 지도에 경로 그리기
@@ -225,44 +214,79 @@ function getMarkerColor(congestionLevel) {
    return "blue";  // 기본 색상 (혼잡도 정보가 없는 경우)
 }
 
-
-function processCongestionData(legs) {
-   legs.forEach(function(leg) {
-       if (leg.mode === 'SUBWAY' && leg.passStopList) {
-           leg.passStopList.stationList.forEach(function(station) {
-               // 혼잡도 데이터를 가져옴
-               var congestionLevel = getStationCongestion(station.stationID);
-
-               // 혼잡도에 맞는 마커 색상 설정
-               var markerColor = getMarkerColor(congestionLevel);
-
-               // 혼잡도에 맞는 마커 생성
-               var marker = new Tmapv2.Marker({
-                   position: new Tmapv2.LatLng(station.lat, station.lon),
-                   map: map,
-                   icon: {
-                       fillColor: markerColor,  // 마커 색상 설정
-                       fillOpacity: 0.8,        // 마커 불투명도 설정
-                       strokeColor: "#000000",  // 마커 테두리 색상
-                       strokeWeight: 1          // 마커 테두리 두께
-                   }
-               });
-
-               // 마커에 혼잡도 정보 표시
-               var infoWindow = new Tmapv2.InfoWindow({
-                   position: new Tmapv2.LatLng(station.lat, station.lon),
-                   content: "<div>" + station.stationName + ": " + congestionLevel + " (혼잡도)</div>", // 마커 정보창 내용
-                   map: map
-               });
-
-               markers.push(marker);  // 마커를 배열에 추가
-           });
-       }
+function fetchCongestionData() {
+   $.ajax({
+      method: "POST",
+      url: "http://127.0.0.1:5001/get_congestion",
+      contentType: "application/json",
+      data: JSON.stringify({}),  // 빈 JSON 객체 전달
+      success: function(response) {
+         console.log("Received congestion data:", response);
+         if (response && Object.keys(response).length > 0) {
+            displayCongestionMarkers(response);
+         } else {
+            console.error("혼잡도 데이터가 없습니다.");
+         }
+      },
+      error: function(error) {
+         console.error("혼잡도 데이터 요청 실패", error);
+      }
    });
 }
 
 
+// 혼잡도 수준에 따른 색상을 반환하는 함수
+function getMarkerColor(congestionLevel) {
+   if (congestionLevel >= 80) return "#FF0000"; // 혼잡도 높음 (빨간색)
+   else if (congestionLevel >= 50) return "#FFA500"; // 혼잡도 중간 (주황색)
+   else return "#00FF00"; // 혼잡도 낮음 (초록색)
+}
 
+// 혼잡도 데이터에 따라 마커와 정보창을 생성하여 지도에 표시하는 함수
+function displayCongestionMarkers(congestionData) {
+   for (var route in congestionData) {
+      var stations = congestionData[route];
+      
+      stations.forEach(function(stationData) {
+         var stationName = stationData.station_name;
+         var routeName = stationData.route_name;
+         var congestionLevel = stationData.congestion_data;
+         
+         var markerColor = getMarkerColor(congestionLevel);
+
+         var marker = new Tmapv2.Marker({
+            position: new Tmapv2.LatLng(stationData.lat, stationData.lon),
+            map: map,
+            icon: {
+               fillColor: markerColor,
+               fillOpacity: 0.8,
+               strokeColor: "#000000",
+               strokeWeight: 1
+            }
+         });
+
+         var infoWindowContent = `<div>${stationName} (${routeName}) 혼잡도: ${congestionLevel}</div>`;
+         var infoWindow = new Tmapv2.InfoWindow({
+            position: new Tmapv2.LatLng(stationData.lat, stationData.lon),
+            content: infoWindowContent,
+            map: map
+         });
+
+         markers.push(marker);
+         markers.push(infoWindow);
+      });
+   }
+}
+
+// 초기 로딩 시 혼잡도 데이터 요청 및 지도 마커 생성
+document.addEventListener("DOMContentLoaded", function() {
+   fetchCongestionData();  // 혼잡도 데이터 요청하여 마커 생성
+});
+
+// 혼잡도 정보를 반환하는 기본 함수 예시
+function getCongestionInfo(stationData) {
+   return `${stationData.station_name} (${stationData.route_name}) 혼잡도: ${stationData.congestion_data}`;
+}
 
 
 // 기존 마커 삭제 함수
@@ -285,4 +309,3 @@ function removePolylines() {
 $(document).ready(function() {
    initMapWithMarkers(); // 페이지 로드 시 길찾기 자동 실행
 });
-
