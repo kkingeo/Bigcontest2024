@@ -7,7 +7,7 @@ import urllib.parse
 app = Flask(__name__)
 CORS(app)
 
-API_KEY = 'gDkNTudIim8P9UUU18StX8dvwGql27Ib4sh7fb9y'
+API_KEY = 'Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38'
 TMAP_URL = "https://apis.openapi.sk.com/transit/routes"
 
 # 전역 변수로 선언
@@ -184,6 +184,8 @@ def get_congestion_data(all_subway_info):
 @app.route('/get_congestion', methods=['POST'])  # POST로 변경
 def send_congestion_data():
     global all_subway_info
+    
+    print("Request received at /get_congestion:", request.json)  # 요청 데이터 확인 로그 추가
     if not all_subway_info:
         return jsonify({"error": "No subway info available. Please find the route first."}), 400
 
