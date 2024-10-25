@@ -55,6 +55,7 @@ def find_route():
         if response.status_code == 200:
             route_data = response.json()  # 전역 변수에 할당
             print("Route Data:", route_data)  # 제대로 된 응답 데이터인지 확인
+            print("Updated all_subway_info:", all_subway_info) # 확인 로그
             return jsonify(route_data), 200
         else:
             return jsonify({"error": "Tmap API request failed"}), response.status_code
@@ -187,10 +188,12 @@ def send_congestion_data():
     
     print("Request received at /get_congestion:", request.json)  # 요청 데이터 확인 로그 추가
     if not all_subway_info:
+        print("Error: No subway info available.")
         return jsonify({"error": "No subway info available. Please find the route first."}), 400
 
     # 혼잡도 데이터 가져오기
     congestion_results = get_congestion_data(all_subway_info)
+    print("Congestion Results:", congestion_results) # 혼잡도 결과 확인
     
     # 프론트엔드로 JSON 형식으로 반환
     return jsonify(congestion_results)
