@@ -7,7 +7,7 @@ import urllib.parse
 app = Flask(__name__)
 CORS(app)
 
-API_KEY = 'Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38'
+API_KEY = 'gDkNTudIim8P9UUU18StX8dvwGql27Ib4sh7fb9y'
 TMAP_URL = "https://apis.openapi.sk.com/transit/routes"
 
 # 전역 변수로 선언
@@ -54,7 +54,7 @@ def find_route():
         
         if response.status_code == 200:
             route_data = response.json()  # 전역 변수에 할당
-            print("Route Data:", route_data)  # 제대로 된 응답 데이터인지 확인
+            #print("Route Data:", route_data)  # 제대로 된 응답 데이터인지 확인
             print("Updated all_subway_info:", all_subway_info) # 확인 로그
             return jsonify(route_data), 200
         else:
@@ -184,6 +184,7 @@ def get_congestion_data(all_subway_info):
 # 프론트엔드로 혼잡도 데이터를 전송하는 API 엔드포인트
 @app.route('/get_congestion', methods=['POST'])  # POST로 변경
 def send_congestion_data():
+    print("Received request data:", request.json)  # 요청 데이터 출력
     global all_subway_info
     
     print("Request received at /get_congestion:", request.json)  # 요청 데이터 확인 로그 추가
