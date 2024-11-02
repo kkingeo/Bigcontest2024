@@ -55,7 +55,7 @@ def find_route():
         
         if response.status_code == 200:
             route_data = response.json()  # 전역 변수에 할당
-            print("Route Data:", route_data)  # 제대로 된 응답 데이터인지 확인
+            # print("Route Data:", route_data)  # 제대로 된 응답 데이터인지 확인
             # 지하철 정보 추출 함수 호출 (갱신 수행)
             all_subway_info = extract_subway_info(route_data)
             print("Updated all_subway_info:", all_subway_info) # 확인 로그
