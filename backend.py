@@ -191,7 +191,8 @@ def get_congestion_data(all_subway_info):
 @app.route('/get_congestion', methods=['POST'])  # POST로 변경
 def send_congestion_data():
     global all_subway_info
-    
+    print("Current all_subway_info:", all_subway_info)  # 혼잡도 데이터가 있는지 확인하는 로그
+
     print("Request received at /get_congestion:", request.json)  # 요청 데이터 확인 로그 추가
     if not all_subway_info:
         print("Error: No subway info available.")
