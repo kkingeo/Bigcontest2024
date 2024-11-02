@@ -15,6 +15,7 @@ route_data = None
 all_subway_info = None
 
 @app.route('/find_route', methods=['POST'])
+
 def find_route():
     global route_data, all_subway_info  # 전역 변수 사용 선언
     
@@ -55,7 +56,11 @@ def find_route():
         if response.status_code == 200:
             route_data = response.json()  # 전역 변수에 할당
             print("Route Data:", route_data)  # 제대로 된 응답 데이터인지 확인
+
+            # 지하철 정보 추출 함수 호출
+            all_subway_info = extract_subway_info(route_data)
             print("Updated all_subway_info:", all_subway_info) # 확인 로그
+
             return jsonify(route_data), 200
         else:
             return jsonify({"error": "Tmap API request failed"}), response.status_code
@@ -66,6 +71,9 @@ def find_route():
 
 # 경로 데이터에서 지하철 정보 추출하는 함수
 def extract_subway_info(route_data):
+    
+    global all_subway_info
+    
     all_subway_info = {}
 
     try:
@@ -100,7 +108,7 @@ def extract_subway_info(route_data):
             # 지하철 정보가 있는 경로만 저장
             if subway_station_info:
                 all_subway_info[f'route_{idx + 1}'] = subway_station_info
-
+        print("all_subway_info after extraction:", all_subway_info)  # 추출 직후 값 확인
     except KeyError:
         print("Invalid route data structure")
     
