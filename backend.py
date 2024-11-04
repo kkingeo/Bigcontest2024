@@ -83,9 +83,11 @@ def extract_subway_info(route_data):
             subway_station_info = []
             
             for leg in itinerary['legs']:
+                print(f"Processing leg {idx+1}, mode: {leg['mode']}")  # 디버깅: 각 leg의 mode 확인
                 # 지하철 경로인지 확인
                 if leg['mode'] == 'SUBWAY':
                     route_name = leg['route']  # 호선 정보
+                    print(f"Found SUBWAY leg, route name: {route_name}")  # 디버깅: SUBWAY 모드와 노선명 확인
                     if '수도권' in route_name or '(급행)' in route_name:
                         route_name = route_name.replace('수도권', '').replace('(급행)', '').strip()
                     
@@ -102,14 +104,15 @@ def extract_subway_info(route_data):
                             'station_name': station_name,
                             'line': route_name
                         })
-            
+                        print(f"Added station: {station_name}, line: {route_name}")  # 디버깅: 각 역 이름과 노선명 확인
             # 지하철 정보가 있는 경로만 저장
             if subway_station_info:
                 all_subway_info[f'route_{idx + 1}'] = subway_station_info
+                print(f"Added route_{idx + 1} with stations:", subway_station_info)  # 디버깅: 저장된 경로별 지하철역 목록 확인
         print("all_subway_info after extraction:", all_subway_info)  # 추출 직후 값 확인
     except KeyError:
         print("Invalid route data structure")
-    
+    print("all_subway_info after extraction:", all_subway_info)  # 최종 확인
     return all_subway_info
 
 
