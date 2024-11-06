@@ -57,8 +57,8 @@ def find_route():
             route_data = response.json()  # 전역 변수에 할당
             # print("Route Data:", route_data)  # 제대로 된 응답 데이터인지 확인
             # 지하철 정보 추출 함수 호출 (갱신 수행)
-            all_subway_info = extract_subway_info(route_data)
-            print("Updated all_subway_info:", all_subway_info) # 확인 로그
+            #all_subway_info = extract_subway_info(route_data)
+            #print("Updated all_subway_info:", all_subway_info) # 확인 로그
             return jsonify(route_data), 200
         else:
             return jsonify({"error": "Tmap API request failed"}), response.status_code
@@ -67,64 +67,11 @@ def find_route():
         return jsonify({"error": "Unable to find route"}), 500
 
 
-# 경로 데이터에서 지하철 정보 추출하는 함수
-def extract_subway_info(route_data):
-    
-    global all_subway_info
-    
-    all_subway_info = {}
-
-    try:
-        itineraries = route_data['metaData']['plan']['itineraries']
-        # 각 'itinerary'에서 legs 확인
-        for idx, itinerary in enumerate(itineraries):
-            
-            # 경로에 포함된 지하철역 이름과 호선 정보를 담을 리스트
-            subway_station_info = []
-            
-            for leg in itinerary['legs']:
-                print(f"Processing leg {idx+1}, mode: {leg['mode']}")  # 디버깅: 각 leg의 mode 확인
-                # 지하철 경로인지 확인
-                if leg['mode'] == 'SUBWAY':
-                    route_name = leg['route']  # 호선 정보
-                    print(f"Found SUBWAY leg, route name: {route_name}")  # 디버깅: SUBWAY 모드와 노선명 확인
-                    if '수도권' in route_name or '(급행)' in route_name:
-                        route_name = route_name.replace('수도권', '').replace('(급행)', '').strip()
-                    
-                    # 'passStopList'에서 지하철역 목록 추출
-                    for station in leg['passStopList']['stationList']:
-                        station_name = station['stationName']
-                        
-                        # 역 이름 뒤에 '역'을 붙임 (중복 방지 포함)
-                        if not station_name.endswith('역'):
-                            station_name += '역'
-                        
-                        # 역 이름과 호선 정보 함께 저장
-                        subway_station_info.append({
-                            'station_name': station_name,
-                            'line': route_name
-                        })
-                        print(f"Added station: {station_name}, line: {route_name}")  # 디버깅: 각 역 이름과 노선명 확인
-            # 지하철 정보가 있는 경로만 저장
-            if subway_station_info:
-                all_subway_info[f'route_{idx + 1}'] = subway_station_info
-                print(f"Added route_{idx + 1} with stations:", subway_station_info)  # 디버깅: 저장된 경로별 지하철역 목록 확인
-        print("all_subway_info after extraction:", all_subway_info)  # 추출 직후 값 확인
-    except KeyError:
-        print("Invalid route data structure")
-    print("all_subway_info after extraction:", all_subway_info)  # 최종 확인
-    return all_subway_info
-
-
-# all_subway_info에서 경로별로 노선명과 역명칭을 가져와서 차례대로 인코딩 및 API 호출
-def get_congestion_data(all_subway_info):
-    congestion_results = {}
-    
+def get_congestion_for_station(route_name, station_name):
     # 현재 시간 반영 (요일과 시간)
     now = datetime.now()
     day_of_week = now.strftime('%a').upper()  # 요일을 MON, TUE 형식으로 반환
     current_hour = int(now.strftime('%H'))  # 현재 시간을 24시간 형식으로 반환
-    current_minute = int(now.strftime('%M'))  # 현재 분을 숫자로 반환
 
     # 시간 범위 제한 (05 ~ 23시)
     if current_hour < 5:
@@ -135,60 +82,37 @@ def get_congestion_data(all_subway_info):
 
     headers = {
         "accept": "application/json",
-        "appKey": API_KEY  # 실제 Tmap API Key 입력
+        "appKey": API_KEY
     }
 
-    # all_subway_info에서 경로별로 노선명과 역명칭을 가져와서 API 호출
-    for route, stations in all_subway_info.items():
-        route_results = []  # 경로별로 혼잡도 데이터를 저장할 리스트
+    # URL 인코딩 (노선명과 역명칭)
+    encoded_route_name = urllib.parse.quote(route_name)
+    encoded_station_name = urllib.parse.quote(station_name)
 
-        for station_info in stations:
-            route_name = station_info['line']
-            station_name = station_info['station_name']
+    # 혼잡도 API URL
+    url = f"https://apis.openapi.sk.com/transit/puzzle/subway/congestion/stat/train?routeNm={encoded_route_name}&stationNm={encoded_station_name}&dow={day_of_week}&hh={hour_str}"
 
-            # URL 인코딩 (노선명과 역명칭)
-            encoded_route_name = urllib.parse.quote(route_name)
-            encoded_station_name = urllib.parse.quote(station_name)
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            congestion_data = response.json()
+            if 'stat' in congestion_data['contents']:
+                # 현재 시간에 가장 가까운 혼잡도 데이터를 반환
+                closest_congestion = None
+                closest_time_diff = float('inf')
+                for stat in congestion_data['contents']['stat']:
+                    for data in stat['data']:
+                        hh = int(data['hh'])
+                        mm = int(data['mm'])
+                        time_diff = abs((current_hour * 60) - (hh * 60 + mm))
+                        if time_diff < closest_time_diff:
+                            closest_time_diff = time_diff
+                            closest_congestion = data['congestionTrain']
+                return closest_congestion
+    except requests.RequestException as e:
+        print(f"Request failed for station: {station_name}, route: {route_name}")
+    return None
 
-            # 완성된 URL
-            url = f"https://apis.openapi.sk.com/transit/puzzle/subway/congestion/stat/train?routeNm={encoded_route_name}&stationNm={encoded_station_name}&dow={day_of_week}&hh={hour_str}"
-
-            # Tmap API 호출
-            try:
-                response = requests.get(url, headers=headers)
-                if response.status_code == 200:
-                    # 응답 데이터 저장
-                    congestion_data = response.json()
-
-                    # 현재 시간에 가장 가까운 데이터를 찾기
-                    if 'stat' in congestion_data['contents']:
-                        closest_congestion = None
-                        closest_time_diff = float('inf')
-
-                        for stat in congestion_data['contents']['stat']:
-                            for data in stat['data']:
-                                hh = int(data['hh'])
-                                mm = int(data['mm'])
-
-                                time_diff = abs((current_hour * 60 + current_minute) - (hh * 60 + mm))
-
-                                if time_diff < closest_time_diff:
-                                    closest_time_diff = time_diff
-                                    closest_congestion = {
-                                        'station_name': station_name,
-                                        'route_name': route_name,
-                                        'congestion_data': data['congestionTrain']
-                                    }
-                        if closest_congestion:
-                            route_results.append(closest_congestion)
-            except requests.RequestException as e:
-                print(f"Request failed for station: {station_name}, route: {route_name}")
-
-        # 경로별 결과를 딕셔너리에 추가
-        if route_results:
-            congestion_results[route] = route_results
-
-    return congestion_results
 
 # 프론트엔드로 혼잡도 데이터를 전송하는 API 엔드포인트
 @app.route('/get_congestion', methods=['POST'])
@@ -221,38 +145,9 @@ def send_congestion_data():
     
     return jsonify(congestion_results)
 
-# 캐시를 저장할 딕셔너리 생성
-congestion_cache = {}
 
-def get_congestion_for_station(route_name, station_name):
-    # 캐시에 혼잡도 데이터가 있는지 확인
-    cache_key = f"{route_name}_{station_name}"
-    if cache_key in congestion_cache:
-        print(f"Using cached data for {station_name} on {route_name}")
-        return congestion_cache[cache_key]  # 캐시된 데이터 반환
-
-    # URL 인코딩을 통해 route_name과 station_name을 API 요청에 맞게 변환
-    encoded_route_name = urllib.parse.quote(route_name)
-    encoded_station_name = urllib.parse.quote(station_name)
-    url = f"https://apis.openapi.sk.com/transit/puzzle/subway/congestion/stat/train?routeNm={encoded_route_name}&stationNm={encoded_station_name}&dow=MON&hh=08"
-
-    headers = {
-        "accept": "application/json",
-        "appKey": API_KEY
-    }
-
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        data = response.json()
-
-        # 혼잡도 데이터를 캐시에 저장
-        congestion_level = data.get('congestionTrain', None)
-        congestion_cache[cache_key] = congestion_level
-        return congestion_level
-    except requests.HTTPError as e:
-        print(f"Error fetching congestion data for {station_name} on {route_name}: {e}")
-        return None
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
+
+
