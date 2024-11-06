@@ -7,7 +7,7 @@ import urllib.parse
 app = Flask(__name__)
 CORS(app)
 
-API_KEY = 'Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38'
+API_KEY = 'gDkNTudIim8P9UUU18StX8dvwGql27Ib4sh7fb9y'
 TMAP_URL = "https://apis.openapi.sk.com/transit/routes"
 
 # 전역 변수로 선언
@@ -50,7 +50,7 @@ def find_route():
         
         # 응답 상태 코드와 내용을 출력해 디버깅
         print(f"Response Status Code: {response.status_code}")  # 상태 코드 출력
-        print("Response JSON:")  # 응답 데이터 출력
+        #print("Response JSON:")  # 응답 데이터 출력
         print(response.text)  # 전체 응답을 문자열로 출력 (디버깅용)
         
         if response.status_code == 200:
@@ -191,22 +191,68 @@ def get_congestion_data(all_subway_info):
     return congestion_results
 
 # 프론트엔드로 혼잡도 데이터를 전송하는 API 엔드포인트
-@app.route('/get_congestion', methods=['POST'])  # POST로 변경
+@app.route('/get_congestion', methods=['POST'])
 def send_congestion_data():
     global all_subway_info
-    print("Current all_subway_info:", all_subway_info)  # 혼잡도 데이터가 있는지 확인하는 로그
+    request_data = request.get_json()  # 프론트엔드에서 받은 데이터 확인
+    print("Received station data for congestion:", request_data)
 
-    print("Request received at /get_congestion:", request.json)  # 요청 데이터 확인 로그 추가
-    if not all_subway_info:
-        print("Error: No subway info available.")
-        return jsonify({"error": "No subway info available. Please find the route first."}), 400
+    if not request_data or "stations" not in request_data:
+        print("Error: No station data provided.")
+        return jsonify({"error": "No station data provided."}), 400
 
     # 혼잡도 데이터 가져오기
-    congestion_results = get_congestion_data(all_subway_info)
-    print("Congestion Results:", congestion_results) # 혼잡도 결과 확인
+    congestion_results = {}
+    for station in request_data["stations"]:
+        route_name = station["route_name"]
+        station_name = station["station_name"]
+        congestion_level = get_congestion_for_station(route_name, station_name)
+        
+        if congestion_level is not None:
+            if route_name not in congestion_results:
+                congestion_results[route_name] = []
+            congestion_results[route_name].append({
+                "station_name": station_name,
+                "route_name": route_name,
+                "congestion_data": congestion_level
+            })
     
-    # 프론트엔드로 JSON 형식으로 반환
+    print("Congestion Results:", congestion_results)  # 혼잡도 결과 확인
+    
     return jsonify(congestion_results)
+
+# 캐시를 저장할 딕셔너리 생성
+congestion_cache = {}
+
+def get_congestion_for_station(route_name, station_name):
+    # 캐시에 혼잡도 데이터가 있는지 확인
+    cache_key = f"{route_name}_{station_name}"
+    if cache_key in congestion_cache:
+        print(f"Using cached data for {station_name} on {route_name}")
+        return congestion_cache[cache_key]  # 캐시된 데이터 반환
+
+    # URL 인코딩을 통해 route_name과 station_name을 API 요청에 맞게 변환
+    encoded_route_name = urllib.parse.quote(route_name)
+    encoded_station_name = urllib.parse.quote(station_name)
+    url = f"https://apis.openapi.sk.com/transit/puzzle/subway/congestion/stat/train?routeNm={encoded_route_name}&stationNm={encoded_station_name}&dow=MON&hh=08"
+
+    headers = {
+        "accept": "application/json",
+        "appKey": API_KEY
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        # 혼잡도 데이터를 캐시에 저장
+        congestion_level = data.get('congestionTrain', None)
+        congestion_cache[cache_key] = congestion_level
+        return congestion_level
+    except requests.HTTPError as e:
+        print(f"Error fetching congestion data for {station_name} on {route_name}: {e}")
+        return None
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
