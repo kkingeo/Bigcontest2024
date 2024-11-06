@@ -1,5 +1,5 @@
 var map, marker1, marker2, routeLine;
-var tmapApiKey = 'Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38';
+var tmapApiKey = 'gDkNTudIim8P9UUU18StX8dvwGql27Ib4sh7fb9y';
 var markers = [];
 var polylines = [];
 
@@ -349,16 +349,20 @@ function processCongestionData(legs) {
       }
    });
 
+   console.log("Sending target stations data to server:", targetStations);  // 서버에 전송 전 데이터 로그 추가
+
    // 서버에 혼잡도 요청
    $.ajax({
       method: "POST",
       url: "http://127.0.0.1:5001/get_congestion",
       contentType: "application/json",
       data: JSON.stringify({ stations: targetStations }),  // 타는 역과 내리는 역 정보 포함
+      
       success: function(response) {
          console.log("Received congestion data:", response);
          if (response && Object.keys(response).length > 0) {
-            displayCongestionMarkers(response);
+            console.log("Displaying congestion markers for received data.");
+            displayCongestionMarkers(response);  // 혼잡도 마커 표시 함수 호출
          } else {
             console.error("혼잡도 데이터가 없습니다.");
          }
@@ -372,13 +376,6 @@ function processCongestionData(legs) {
 
 
 
-// 혼잡도 수준에 따른 색상을 반환하는 함수
-function getMarkerColor(congestionLevel) {
-   if (congestionLevel >= 80) return "#FF0000"; // 혼잡도 높음 (빨간색)
-   else if (congestionLevel >= 50) return "#FFA500"; // 혼잡도 중간 (주황색)
-   else return "#00FF00"; // 혼잡도 낮음 (초록색)
-}
-
 // 혼잡도 데이터에 따라 마커와 정보창을 생성하여 지도에 표시하는 함수
 function displayCongestionMarkers(congestionData) {
    for (var route in congestionData) {
@@ -391,6 +388,12 @@ function displayCongestionMarkers(congestionData) {
 
            // 혼잡도에 따른 마커 색상 설정
            var markerColor = getMarkerColor(congestionLevel);
+
+           // 좌표가 존재하는지 확인
+           if (!stationData.lat || !stationData.lon) {
+               console.warn(`좌표 정보가 없습니다: ${stationName} (${routeName})`);
+               return; // 좌표가 없는 경우 마커 생성을 건너뜁니다.
+           }
 
            // 마커 생성 및 지도에 추가
            var marker = new Tmapv2.Marker({
@@ -417,6 +420,7 @@ function displayCongestionMarkers(congestionData) {
        });
    }
 }
+
 
 
 // 기존 마커 삭제 함수
