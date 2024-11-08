@@ -7,7 +7,7 @@ import urllib.parse
 app = Flask(__name__)
 CORS(app)
 
-API_KEY = 'gDkNTudIim8P9UUU18StX8dvwGql27Ib4sh7fb9y'
+API_KEY = 'Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38'
 TMAP_URL = "https://apis.openapi.sk.com/transit/routes"
 
 # 전역 변수로 선언
@@ -51,7 +51,7 @@ def find_route():
         # 응답 상태 코드와 내용을 출력해 디버깅
         print(f"Response Status Code: {response.status_code}")  # 상태 코드 출력
         #print("Response JSON:")  # 응답 데이터 출력
-        print(response.text)  # 전체 응답을 문자열로 출력 (디버깅용)
+        #print(response.text)  # 전체 응답을 문자열로 출력 (디버깅용)
         
         if response.status_code == 200:
             route_data = response.json()  # 전역 변수에 할당
