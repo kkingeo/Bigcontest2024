@@ -1,5 +1,5 @@
 var map, marker1, marker2, routeLine;
-var tmapApiKey = 'gDkNTudIim8P9UUU18StX8dvwGql27Ib4sh7fb9y';
+var tmapApiKey = 'Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38';
 var markers = [];
 var polylines = [];
 
@@ -201,9 +201,12 @@ function findRoute(startLat, startLon, destinationLat, destinationLon) {
 }
 
 
+
 // 타는 역과 내리는 역만 표시하는 함수
 function displayStationInfo(legs, stationInfoDiv) {
    stationInfoDiv.innerHTML = '';  // 기존 내용을 초기화
+
+   const stationCoordinates = [];  // 좌표 배열을 저장할 변수
 
    legs.forEach(function(leg) {
        if (leg.mode === 'SUBWAY' && leg.passStopList && leg.passStopList.stationList) {
@@ -212,18 +215,19 @@ function displayStationInfo(legs, stationInfoDiv) {
             const startStationInfo = document.createElement('p');
             startStationInfo.innerHTML = `타는 역: ${startStation.stationName} (${startStation.lat}, ${startStation.lon})`;
             stationInfoDiv.appendChild(startStationInfo);
- 
+            stationCoordinates.push({ name: startStation.stationName, lat: startStation.lat, lon: startStation.lon }); // 좌표 저장
+
             // 내리는 역 정보 표시
             const endStation = leg.passStopList.stationList[leg.passStopList.stationList.length - 1];
             const endStationInfo = document.createElement('p');
             endStationInfo.innerHTML = `내리는 역: ${endStation.stationName} (${endStation.lat}, ${endStation.lon})`;
             stationInfoDiv.appendChild(endStationInfo);
+            stationCoordinates.push({ name: endStation.stationName, lat: endStation.lat, lon: endStation.lon }); // 좌표 저장
        }
    });
+   
+   return stationCoordinates; // 좌표 배열 반환
 }
-
-
-
 
 
 
@@ -323,46 +327,33 @@ function handleRouteData(response) {
 
 // 혼잡도 데이터를 서버에서 요청하여 마커 생성하는 함수
 function processCongestionData(legs) {
-   // legs가 정의되지 않으면 오류 메시지 출력
-   if (!legs) {
-      console.error("Legs data is undefined.");
-      return;
-   }
+   // 좌표 정보 가져오기
+   const stationCoordinates = displayStationInfo(legs, document.getElementById('stationInfoDiv'));
 
-   const targetStations = [];
+   const targetStations = [];  // 혼잡도 데이터 요청용 배열
 
-   // 타는 역과 내리는 역 정보 추출
+   // 타는 역과 내리는 역 정보 추출 (혼잡도 요청용)
    legs.forEach((leg) => {
       if (leg.mode === 'SUBWAY' && leg.passStopList && leg.passStopList.stationList) {
-         const startStation = leg.passStopList.stationList[0]; // 타는 역
-         const endStation = leg.passStopList.stationList[leg.passStopList.stationList.length - 1]; // 내리는 역
-         
-         // 타는 역과 내리는 역을 배열에 추가
-         targetStations.push({
-            station_name: startStation.stationName,
-            route_name: leg.route,
-         });
-         targetStations.push({
-            station_name: endStation.stationName,
-            route_name: leg.route,
-         });
+         const startStation = leg.passStopList.stationList[0];
+         const endStation = leg.passStopList.stationList[leg.passStopList.stationList.length - 1];
+         targetStations.push({ station_name: startStation.stationName, route_name: leg.route });
+         targetStations.push({ station_name: endStation.stationName, route_name: leg.route });
       }
    });
 
-   console.log("Sending target stations data to server:", targetStations);  // 서버에 전송 전 데이터 로그 추가
+   console.log("Sending target stations data to server:", targetStations);
 
    // 서버에 혼잡도 요청
    $.ajax({
       method: "POST",
       url: "http://127.0.0.1:5001/get_congestion",
       contentType: "application/json",
-      data: JSON.stringify({ stations: targetStations }),  // 타는 역과 내리는 역 정보 포함
-      
+      data: JSON.stringify({ stations: targetStations }),
       success: function(response) {
          console.log("Received congestion data:", response);
          if (response && Object.keys(response).length > 0) {
-            console.log("Displaying congestion markers for received data.");
-            displayCongestionMarkers(response);  // 혼잡도 마커 표시 함수 호출
+            displayCongestionMarkers(stationCoordinates, response);  // 좌표와 혼잡도 정보 함께 전달
          } else {
             console.error("혼잡도 데이터가 없습니다.");
          }
@@ -374,30 +365,39 @@ function processCongestionData(legs) {
 }
 
 
-
-
 // 혼잡도 데이터에 따라 마커와 정보창을 생성하여 지도에 표시하는 함수
-function displayCongestionMarkers(congestionData) {
-   for (var route in congestionData) {
-       var stations = congestionData[route];
+function displayCongestionMarkers(congestionData, stationCoordinates) {
+   console.log("Displaying congestion markers for received data:", congestionData);
+
+   // stationCoordinates가 배열이 아니면 배열로 변환
+   if (!Array.isArray(stationCoordinates)) {
+       stationCoordinates = [stationCoordinates];
+   }
+
+   Object.keys(congestionData).forEach((route) => {
+       const stations = Array.isArray(congestionData[route]) ? congestionData[route] : [congestionData[route]];
 
        stations.forEach(function(stationData) {
-           var stationName = stationData.station_name;
-           var routeName = stationData.route_name;
-           var congestionLevel = stationData.congestion_data;
+           const stationName = stationData.station_name;
+           const routeName = stationData.route_name;
+           const congestionLevel = stationData.congestion_data;
 
-           // 혼잡도에 따른 마커 색상 설정
-           var markerColor = getMarkerColor(congestionLevel);
+           // 해당 역에 일치하는 좌표 찾기
+           const matchedStation = stationCoordinates.find(coord => coord.name === stationName);
 
-           // 좌표가 존재하는지 확인
-           if (!stationData.lat || !stationData.lon) {
+           if (!matchedStation) {
                console.warn(`좌표 정보가 없습니다: ${stationName} (${routeName})`);
-               return; // 좌표가 없는 경우 마커 생성을 건너뜁니다.
+               return;
            }
 
+           const { lat, lon } = matchedStation;
+
+           // 혼잡도에 따른 마커 색상 설정
+           const markerColor = getMarkerColor(congestionLevel);
+
            // 마커 생성 및 지도에 추가
-           var marker = new Tmapv2.Marker({
-               position: new Tmapv2.LatLng(stationData.lat, stationData.lon),
+           const marker = new Tmapv2.Marker({
+               position: new Tmapv2.LatLng(lat, lon),
                map: map,
                icon: {
                    fillColor: markerColor,
@@ -408,9 +408,9 @@ function displayCongestionMarkers(congestionData) {
            });
 
            // 혼잡도 정보를 표시하는 정보창 생성
-           var infoWindowContent = `<div>${stationName} (${routeName}) 혼잡도: ${congestionLevel}</div>`;
-           var infoWindow = new Tmapv2.InfoWindow({
-               position: new Tmapv2.LatLng(stationData.lat, stationData.lon),
+           const infoWindowContent = `<div>${stationName} (${routeName}) 혼잡도: ${congestionLevel}</div>`;
+           const infoWindow = new Tmapv2.InfoWindow({
+               position: new Tmapv2.LatLng(lat, lon),
                content: infoWindowContent,
                map: map
            });
@@ -418,6 +418,24 @@ function displayCongestionMarkers(congestionData) {
            markers.push(marker);
            markers.push(infoWindow);
        });
+   });
+}
+
+
+
+
+
+// 혼잡도 데이터에 따라 마커와 정보창을 생성하여 지도에 표시하는 함수
+// 혼잡도에 따른 마커 색상을 결정하는 함수
+function getMarkerColor(congestionLevel) {
+   if (congestionLevel >= 80) {
+       return "#FF0000"; // 매우 혼잡 - 빨간색
+   } else if (congestionLevel >= 50) {
+       return "#FFA500"; // 혼잡 - 주황색
+   } else if (congestionLevel >= 30) {
+       return "#FFFF00"; // 약간 혼잡 - 노란색
+   } else {
+       return "#00FF00"; // 원활 - 초록색
    }
 }
 
