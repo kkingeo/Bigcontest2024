@@ -1,5 +1,4 @@
 body {
-    background-color: beige;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -13,10 +12,17 @@ body {
 }
 
 .container {
+    background-image: url("{{ url_for('static', filename='background_img.jpg') }}"); /* 배경 이미지 경로 */
+    background-size: cover;         
+    background-position: top;    /* 이미지 중앙 정렬 */
+    background-repeat: no-repeat;   /* 이미지 반복 금지 */
+    /*padding-top: 30px;*/              /* 메뉴 아래로 이미지가 시작되도록 여백 추가 (메뉴 높이에 맞게 조절) */
+    
     width: 100%; /* 화면의 전체 너비를 사용하도록 설정 */
+    height: 70vh; /* 원하는 높이에 맞게 조정 */
     max-width: 1800px; /* 최대 너비를 1800px로 확장 */
     margin: 0 auto;
-    padding: 20px;
+    /*padding: 20px;*/
   }
 
 .titlebox {
