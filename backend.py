@@ -109,6 +109,8 @@ def get_congestion_for_station(route_name, station_name):
                             closest_time_diff = time_diff
                             closest_congestion = data['congestionTrain']
                 return closest_congestion
+    except requests.HTTPError as e:
+        print(f"Error fetching congestion data for {station_name} on {route_name}: {e}")
     except requests.RequestException as e:
         print(f"Request failed for station: {station_name}, route: {route_name}")
     return None
@@ -128,8 +130,15 @@ def send_congestion_data():
     # 혼잡도 데이터 가져오기
     congestion_results = {}
     for station in request_data["stations"]:
+        # 호선 이름 수정
         route_name = station["route_name"]
+        if route_name.startswith("수도권"):
+            route_name = route_name.replace("수도권", "").strip()
+        # 역 이름에 '역' 붙이기
         station_name = station["station_name"]
+        if not station_name.endswith("역"):
+            station_name += "역"
+        # 혼잡도 데이터 호출
         congestion_level = get_congestion_for_station(route_name, station_name)
         
         if congestion_level is not None:
