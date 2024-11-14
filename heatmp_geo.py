@@ -33,17 +33,17 @@ data = data.rename(columns={'district': 'district'})  # Ensure column names matc
 merged_gdf = gdf.merge(data, on='district', how='left')
 
 # Normalize the case values for color intensity
-norm = Normalize(vmin=merged_gdf['LSTM'].min(), vmax=merged_gdf['LSTM'].max())
+norm = Normalize(vmin=merged_gdf['cold_case'].min(), vmax=merged_gdf['cold_case'].max())
 cmap = plt.cm.Reds  # Red color map for intensity
 
 # Plotting
 fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 merged_gdf.boundary.plot(ax=ax, linewidth=1)
-merged_gdf.plot(column='LSTM', cmap=cmap, linewidth=0.8, ax=ax, edgecolor='black', legend=False)
+merged_gdf.plot(column='cold_case', cmap=cmap, linewidth=0.8, ax=ax, edgecolor='black', legend=False)
 
 # Adding district names at the center of each district with custom adjustments
 for idx, row in merged_gdf.iterrows():
-    if not pd.isna(row['LSTM']):  # Only add name if data is available
+    if not pd.isna(row['cold_case']):  # Only add name if data is available
         centroid = row['geometry'].centroid
         
         # Adjust the position for specific districts
