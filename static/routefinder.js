@@ -1,5 +1,5 @@
 var map, marker1, marker2, routeLine;
-var tmapApiKey = 'Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38';
+var tmapApiKey = 'lIBmk4Kcax3oDmZn8YwSy7vg0N9qooA07uK0qHjS';
 var markers = [];
 var polylines = [];
 
@@ -352,8 +352,14 @@ function processCongestionData(legs) {
       data: JSON.stringify({ stations: targetStations }),
       success: function(response) {
          console.log("Received congestion data:", response);
+
+         // stationCoordinates가 객체일 경우 각 노선의 역 좌표를 배열로 변환하여 병합
+         const stationCoordsArray = Array.isArray(stationCoordinates)
+            ? stationCoordinates
+            : Object.values(stationCoordinates).flat();
+
          if (response && Object.keys(response).length > 0) {
-            displayCongestionMarkers(stationCoordinates, response);  // 좌표와 혼잡도 정보 함께 전달
+            displayCongestionMarkers(stationCoordsArray, response);  // 좌표와 혼잡도 정보 함께 전달
          } else {
             console.error("혼잡도 데이터가 없습니다.");
          }
@@ -365,59 +371,76 @@ function processCongestionData(legs) {
 }
 
 
-// 혼잡도 데이터에 따라 마커와 정보창을 생성하여 지도에 표시하는 함수
-function displayCongestionMarkers(congestionData, stationCoordinates) {
+// 혼잡도 데이터를 서버에서 요청하여 마커 생성하는 함수
+function displayCongestionMarkers(stationCoordinates, congestionData) {
    console.log("Displaying congestion markers for received data:", congestionData);
 
-   // stationCoordinates가 배열이 아니면 배열로 변환
-   if (!Array.isArray(stationCoordinates)) {
-       stationCoordinates = [stationCoordinates];
+   // congestionData가 배열인지 확인하고 아니면 변환
+   if (!Array.isArray(congestionData)) {
+       console.error("congestionData가 배열이 아닙니다. 배열로 변환합니다:", congestionData);
+       congestionData = Object.values(congestionData).flat();
    }
+   console.log("변환된 congestionData:", congestionData);
 
-   Object.keys(congestionData).forEach((route) => {
-       const stations = Array.isArray(congestionData[route]) ? congestionData[route] : [congestionData[route]];
+   // stationCoordinates가 객체인 경우 배열로 변환
+   const stationArray = Array.isArray(stationCoordinates) ? stationCoordinates : Object.values(stationCoordinates).flat();
+   console.log("변환된 stationArray:", stationArray);
 
-       stations.forEach(function(stationData) {
-           const stationName = stationData.station_name;
-           const routeName = stationData.route_name;
-           const congestionLevel = stationData.congestion_data;
+   // stationArray 배열 내용 확인
+   console.log("Received stationArray:");
+   stationArray.forEach((coord, index) => {
+       console.log(`stationArray[${index}] - Name: ${coord.name}, Lat: ${coord.lat}, Lon: ${coord.lon}`);
+   });
 
-           // 해당 역에 일치하는 좌표 찾기
-           const matchedStation = stationCoordinates.find(coord => coord.name === stationName);
+   // congestionData 내용 확인
+   console.log("Received congestionData array:");
+   congestionData.forEach((data, index) => {
+       console.log(`congestionData[${index}] - Station Name: ${data.station_name}, Route Name: ${data.route_name}, Congestion Level: ${data.congestion_data}`);
+   });
 
-           if (!matchedStation) {
-               console.warn(`좌표 정보가 없습니다: ${stationName} (${routeName})`);
-               return;
+   congestionData.forEach(function(stationData) {
+       const stationName = stationData.station_name.replace("역", "").trim(); // "역" 제거 및 공백 제거
+       const routeName = stationData.route_name;
+       const congestionLevel = stationData.congestion_data;
+
+       // stationArray에서 일치하는 좌표 찾기
+       const matchedStation = stationArray.find(coord => coord.name.replace("역", "").trim() === stationName);
+
+       if (!matchedStation) {
+           console.warn(`좌표 정보가 없습니다: ${stationName} (${routeName})`);
+           return;
+       }
+
+       const { lat, lon } = matchedStation;
+       console.log(`좌표를 찾았습니다 - ${stationName}: (${lat}, ${lon})`);
+
+       // 혼잡도에 따른 마커 색상 설정
+       const markerColor = getMarkerColor(congestionLevel);
+
+       // 마커 생성 및 지도에 추가
+       const marker = new Tmapv2.Marker({
+           position: new Tmapv2.LatLng(lat, lon),
+           map: map,
+           icon: {
+               fillColor: markerColor,
+               fillOpacity: 0.8,
+               strokeColor: "#000000",
+               strokeWeight: 1
            }
-
-           const { lat, lon } = matchedStation;
-
-           // 혼잡도에 따른 마커 색상 설정
-           const markerColor = getMarkerColor(congestionLevel);
-
-           // 마커 생성 및 지도에 추가
-           const marker = new Tmapv2.Marker({
-               position: new Tmapv2.LatLng(lat, lon),
-               map: map,
-               icon: {
-                   fillColor: markerColor,
-                   fillOpacity: 0.8,
-                   strokeColor: "#000000",
-                   strokeWeight: 1
-               }
-           });
-
-           // 혼잡도 정보를 표시하는 정보창 생성
-           const infoWindowContent = `<div>${stationName} (${routeName}) 혼잡도: ${congestionLevel}</div>`;
-           const infoWindow = new Tmapv2.InfoWindow({
-               position: new Tmapv2.LatLng(lat, lon),
-               content: infoWindowContent,
-               map: map
-           });
-
-           markers.push(marker);
-           markers.push(infoWindow);
        });
+
+       // 혼잡도 정보를 표시하는 정보창 생성
+       const infoWindowContent = `<div class="infowindow-content">${stationName} (${routeName}) 혼잡도: ${congestionLevel}</div>`;
+       
+       const infoWindow = new Tmapv2.InfoWindow({
+           position: new Tmapv2.LatLng(lat, lon),
+           content: infoWindowContent,
+           map: map
+       });
+      
+
+       markers.push(marker);
+       markers.push(infoWindow);
    });
 }
 

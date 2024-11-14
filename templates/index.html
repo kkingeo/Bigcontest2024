@@ -5,22 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <link href="//fonts.googleapis.com/earlyaccess/nanumgothic.css" rel="stylesheet" type="text/css">
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </head>
 <body>
-    <div class="container"style="background-image: url('{{ url_for('static', filename='background_img.jpg') }}');">
-        <div class="titlebox">
-            <h1>
-                감기 예방을 위한
-                <br>
-                길찾기 서비스
-            </h1>
-            <h2>
-                서울 시민들을 대상으로 감기를 예방하기 위해
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
+        <div class="logo-text">
+            <h1>서울 시민들을 대상으로 감기를 예방하기 위해
                 <br>
                 감기 확진자 예측 데이터셋과 길찾기 서비스를 제공합니다
-            </h2>
+            </h1>
         </div>
+    </div>
+
+    <div class="container"style="background-image: url('{{ url_for('static', filename='background_img.jpg') }}');">
             
         <div class="contentbox">
             <div class="map">
