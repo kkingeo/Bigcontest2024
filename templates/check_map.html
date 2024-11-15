@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='check_map.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo&display=swap" rel="stylesheet">
+    <script src="{{ url_for('static', filename='check_map.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 </head>
 <body>
     <div class="contentbox">
@@ -20,92 +22,19 @@
             
             <div class="tableclass-container">
                 <div class="tableclass">
-                    <div class="tabletitle">
-                        확진자 예측
-                    </div>
+                    <div class="tabletitle">확진자 예측</div>
                     <table>
-                        <tr>
-                            <th>구역</th>
-                            <th>확진자 수</th>
-                            <th>구역</th>
-                            <th>확진자 수</th>
-                        </tr>
-                        <tr>
-                            <td>강남구</td>
-                            <td>4107</td>
-                            <td>강동구</td>
-                            <td>2360</td>
-                        </tr>
-                        <tr>
-                            <td>강서구</td>
-                            <td>4184</td>
-                            <td>강북구</td>
-                            <td>2904</td>
-                        </tr>
-                        <tr>
-                            <td>관악구</td>
-                            <td>2539</td>
-                            <td>광진구</td>
-                            <td>2345</td>
-                        </tr>
-                        <tr>
-                            <td>구로구</td>
-                            <td>4000</td>
-                            <td>금천구</td>
-                            <td>1857</td>
-                        </tr>
-                        <tr>
-                            <td>노원구</td>
-                            <td>4003</td>
-                            <td>동대문구</td>
-                            <td>2930</td>
-                        </tr>
-                        <tr>
-                            <td>도봉구</td>
-                            <td>3013</td>
-                            <td>동작구</td>
-                            <td>3323</td>
-                        </tr>
-                        <tr>
-                            <td>마포구</td>
-                            <td>2419</td>
-                            <td>서대문구</td>
-                            <td>1685</td>
-                        </tr>
-                        <tr>
-                            <td>성동구</td>
-                            <td>2118</td>
-                            <td>성북구</td>
-                            <td>3337</td>
-                        </tr>
-                        <tr>
-                            <td>서초구</td>
-                            <td>1870</td>
-                            <td>송파구</td>
-                            <td>5868</td>
-                        </tr>
-                        <tr>
-                            <td>영등포구</td>
-                            <td>3036</td>
-                            <td>용산구</td>
-                            <td>1584</td>
-                        </tr>
-                        <tr>
-                            <td>양천구</td>
-                            <td>3855</td>
-                            <td>은평구</td>
-                            <td>3239</td>
-                        </tr>
-                        <tr>
-                            <td>종로구</td>
-                            <td>1030</td>
-                            <td>중구</td>
-                            <td>880</td>
-                        </tr>
-                        <tr>
-                            <td>중랑구</td>
-                            <td>3332</td>
-                        </tr>
+                        <thead>
+                            <tr>
+                                <th>구역</th>
+                                <th>확진자 수</th>
+                                <th>구역</th>
+                                <th>확진자 수</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- JavaScript에서 데이터 추가 -->
+                        </tbody>
                     </table>
                 </div>
             </div>
