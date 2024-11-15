@@ -18,7 +18,6 @@ html, body {
   padding: 40px; /* 패딩을 더 추가하여 여유 공간 확보 */
   background-color: white;
   border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -35,16 +34,18 @@ html, body {
 }
 
 
-/* 제목 스타일 */
 h1 {
-  font-size: 28px;
+  font-size: 30px;
+  text-align: left; /* 강제로 왼쪽 정렬 */
   font-weight: bold;
   color: #333;
   margin-bottom: 20px;
+  align-self: flex-start; /* 부모 요소 내에서 왼쪽 정렬 */
 }
 
 /* 입력 필드 및 폼 */
 form {
+  text-align: left; /* 왼쪽 정렬 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -139,7 +140,7 @@ button:hover {
 }
 
 .select-route-btn {
-  background-color: #357cff;
+  background-color: #f8f8f8;
   color: rgb(0, 0, 0);
   border: none;
   padding: 8px 12px;
