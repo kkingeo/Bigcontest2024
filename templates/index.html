@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-    <link href="//fonts.googleapis.com/earlyaccess/nanumgothic.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo&display=swap" rel="stylesheet">
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </head>
 <body>
@@ -19,146 +19,40 @@
         </div>
     </div>
 
-    <div class="container"style="background-image: url('{{ url_for('static', filename='background_img.jpg') }}');">
+    <div class="video-background">
+
+        <video autoplay muted playsinline class="background-video">
+            <source src="{{ url_for('static', filename='background_video.mp4') }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+
+        <div class="container">   
             
-        <div class="contentbox">
-            <div class="map">
-                <div class="subtitle1">
-                    <h3>지도 조회</h3>
-                </div>
-    
-                <div class="map_image">
-                    <!--이미지파일-->
-                </div>
-                
-                <div class="tableclass">
-                    <div class="tabletitle">
-                        확진자 예측
+        
+            <div class="map_image_blank">
+                <img src="{{ url_for('static', filename='map_blank.png') }}" alt="Map Blank Image" class="small-image" />
+            </div>
+            
+            <div class="right-section">
+                <div class="button-container">
+                    <div class="check">
+                        <h2>지도 조회</h2>
+                        <h3>감기 발생 데이터셋을 바탕으로
+                            <br>
+                            구별 예측 감기 환자 수를 보여줍니다</h3>
+                        <button onclick="window.location.href='/check_map'">+</button>
                     </div>
-                    <table>
-                        <tr>
-                            <th>구역</th>
-                            <th>확진자 수</th>
-                            <th>구역</th>
-                            <th>확진자 수</th>
-                        </tr>
-                        <tr>
-                            <td>강남구</td>
-                            <td>4107</td>
-                            <td>강동구</td>
-                            <td>2360</td>
-                        </tr>
-                        <tr>
-                            <td>강서구</td>
-                            <td>4184</td>
-                            <td>강북구</td>
-                            <td>2904</td>
-                        </tr>
-                        <tr>
-                            <td>관악구</td>
-                            <td>2539</td>
-                            <td>광진구</td>
-                            <td>2345</td>
-                        </tr>
-                        <tr>
-                            <td>구로구</td>
-                            <td>4000</td>
-                            <td>금천구</td>
-                            <td>1857</td>
-                        </tr>
-                        <tr>
-                            <td>노원구</td>
-                            <td>4003</td>
-                            <td>동대문구</td>
-                            <td>2930</td>
-                        </tr>
-                        <tr>
-                            <td>도봉구</td>
-                            <td>3013</td>
-                            <td>동작구</td>
-                            <td>3323</td>
-                        </tr>
-                        <tr>
-                            <td>마포구</td>
-                            <td>2419</td>
-                            <td>서대문구</td>
-                            <td>1685</td>
-                        </tr>
-                        <tr>
-                            <td>성동구</td>
-                            <td>2118</td>
-                            <td>성북구</td>
-                            <td>3337</td>
-                        </tr>
-                        <tr>
-                            <td>서초구</td>
-                            <td>1870</td>
-                            <td>송파구</td>
-                            <td>5868</td>
-                        </tr>
-                        <tr>
-                            <td>영등포구</td>
-                            <td>3036</td>
-                            <td>용산구</td>
-                            <td>1584</td>
-                        </tr>
-                        <tr>
-                            <td>양천구</td>
-                            <td>3855</td>
-                            <td>은평구</td>
-                            <td>3239</td>
-                        </tr>
-                        <tr>
-                            <td>종로구</td>
-                            <td>1030</td>
-                            <td>중구</td>
-                            <td>880</td>
-                        </tr>
-                        <tr>
-                            <td>중랑구</td>
-                            <td>3332</td>
-                        </tr>
-                    </table>
+                    <div class="find">
+                        <h2>길찾기</h2>
+                        <h3>길찾기 서비스, 지하철역 혼잡도와 함께
+                            <br>
+                            출발지, 도착지의 예측 감기 환자 수를 보여줍니다</h3>
+                        <button onclick="window.location.href='/routefinder'">+</button>
+                    </div>        
                 </div>
             </div>
-    
-            <div class="routefinder">
-                <div class="subtitle2">
-                    <h3>길찾기</h3>
-                </div>
-    
-                <div class="inputbox">
-                    <h4>출발지 입력</h4>
-                    <label for="start_city">시</label>
-                    <input type="text" id="start_city" placeholder="시/도 입력" tabindex="1">
-                    <label for="start_gu">구</label>
-                    <input type="text" id="start_gu" placeholder="군/구 입력" tabindex="2">
-                    <br>
-                    <label for="start_dong">동</label>
-                    <input type="text" id="start_dong" placeholder="동 입력" tabindex="3">
-                    
-                    <label for="start_bunji">번지</label>
-                    <input type="text" id="start_bunji" placeholder="번지 입력" tabindex="4">
-                    <br>
-                    <button onclick="switchPlaces()">⇅</button>
-                    <button id="find_route_button" onclick="submitForm(event)">검색</button>
-                    <br>
-                    <h4>도착지 입력</h4>
-                    <label for="end_city">시</label>
-                    <input type="text" id="end_city" placeholder="시/도 입력" tabindex="5">
-                    
-                    <label for="end_gu">구</label>
-                    <input type="text" id="end_gu" placeholder="군/구 입력" tabindex="6">
-                    <br>
-                    <label for="end_dong">동</label>
-                    <input type="text" id="end_dong" placeholder="동 입력" tabindex="7">
-                    
-                    <label for="end_bunji">번지</label>
-                    <input type="text" id="end_bunji" placeholder="번지 입력" tabindex="8">
-                </div>                              
-                  
-            </div>
+             
         </div> 
-    </div> 
+    </div>
 </body>
 </html>
