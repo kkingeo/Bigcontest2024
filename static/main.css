@@ -1,89 +1,101 @@
-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 60vh;
+/* 전체 화면 설정 */
+html, body {
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    font-family: 'Nanum Myeongjo', serif;
-}
-
-.video-background {
-    position: relative;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 80vh;
     overflow: hidden;
-}
-
-.background-video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw; /* 화면 전체 너비 */
-    height: 80vh; /* 화면 전체 높이 */
-    object-fit: cover; /* 비디오가 화면을 꽉 채우도록 조정 */
-    z-index: -1; /* 비디오를 배경으로 보이게 뒤로 보내기 */
-    
-}
-
-
-
-.container {
-    
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    flex: 1;
-    padding: 20px;
-    z-index: 1;
-    color: #000000; /* 콘텐츠를 비디오 위에 표시 */
-    width: 100%;
     height: 100%;
-    max-width: 1800px;
-    gap: 40px;
-    transform: translateX(-7%); /* 전체 콘텐츠를 왼쪽으로 약간 이동 */
-}
-
-  .logo-container {
+    font-family: 'Nanum Myeongjo', serif;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: flex-start; /* 내부 요소를 왼쪽 정렬 */
-    align-self: flex-start; /* 부모 레이아웃 내에서 logo-container를 왼쪽 정렬 */
-    position: relative;
-    top: 0;
-    left: 0;
-    padding: 10px;
-    z-index: 1;
-    
 }
 
-.logo-container img {
-    width: 350px; /* 로고 이미지 크기 */
+/* 상단 로고 및 설명 컨테이너 */
+.header {
+    width: 100%;
+    background-color: rgb(255, 255, 255);
+    padding: 20px;
+    text-align: flex-start;
+    position: fixed;
+    top: 0;
+    z-index: 2;
+}
+
+.header .logo-container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.header img {
+    width: 300px; /* 로고 이미지 크기 */
     height: auto; /* 비율 유지 */
 }
 
-
-.logo-text h1 {
+.header h1 {
     font-size: 16px;
     font-weight: light;
     margin-top: 30px;
     margin-left: 50px;
     text-align: left; /* 텍스트 왼쪽 정렬 */
+
 }
 
+.header p {
+    font-size: 14px;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* 비디오 배경 설정 */
+.video-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.background-video {
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
+
+/* 메인 콘텐츠 컨테이너 */
+.container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* 좌우 요소를 균등하게 배치 */
+    height: calc(100vh - 120px); /* 상단 고정 영역을 제외한 높이 */
+    max-width: 1200px; /* 최대 너비를 설정 */
+    margin-top: 120px; /* 상단 영역만큼의 여백 추가 */
+    margin: 0 auto; /* 전체 컨테이너를 화면 가운데로 */
+    padding: 0 20px; /* 좌우 여백 추가 */
+    box-sizing: border-box;
+}
+
+
+/* 지도 이미지와 버튼 섹션 */
 .map_image_blank {
-    flex: 1; /* 비율 조정 */
+    flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+/* 지도와 버튼 섹션에 개별 스타일 지정 */
+.map_image_blank, .right-section {
+    flex: 1; /* 각 요소가 같은 비율로 너비를 차지하도록 */
 }
 
 .small-image {
@@ -91,30 +103,14 @@ body {
     height: auto;
 }
 
-.button {
-    display: flex;
-    flex-direction: row;
-    gap: 15px; /* 버튼들 간의 간격 */
-    
-}
-
-
-.right-section {
-    flex: 1; /* 비율 조정 */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    transform: translateX(-10%); /* 전체 콘텐츠를 왼쪽으로 약간 이동 */
-}
-
-/* 버튼 컨테이너 */
+/* 버튼 컨테이너 스타일 */
 .button-container {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 20px;
-    width: 100%;
+    max-width: 400px; /* 버튼 컨테이너의 최대 너비 */
 }
 
 /* 개별 버튼 섹션 */
@@ -132,33 +128,53 @@ body {
 /* 버튼 스타일 */
 .button-container button {
     padding: 20px 100px;
-    font-size: 16px;
-    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
     background-color: transparent;
-    border: 2px solid #ffffff;
-    color: #ffffff;
+    border: 2px solid #333;
+    color: #333;
     border-radius: 10px;
+    cursor: pointer;
     transition: background-color 0.3s, color 0.3s;
-    width: 100%; /* 버튼 너비를 부모 요소에 맞춤 */
-    max-width: 100px; /* 선택 사항: 버튼 너비 제한 */
 }
 
-/* 버튼에 호버 효과 추가 */
+/* 버튼 호버 효과 */
 .button-container button:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #000000;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 제목 및 설명 텍스트 스타일 */
 .check h2, .find h2 {
-    margin: 5px 0;
     font-size: 30px;
-    color: #000000;
+    color: #333;
+    line-height: 0.3;
+    
 }
 
 .check h3, .find h3 {
-    margin: 5px 0 15px;
     font-size: 16px;
-    color: #000000;
+    color: #666;
+    text-align: center;
     line-height: 1.5;
+    white-space: normal;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .small-image {
+        width: 700px;
+        height: auto;
+    }
+
+    .button-container button {
+        padding: 10px 20px;
+        font-size: 16px;
+    }
 }
