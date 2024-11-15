@@ -1,5 +1,5 @@
 var map, marker1, marker2, routeLine;
-var tmapApiKey = 'gDkNTudIim8P9UUU18StX8dvwGql27Ib4sh7fb9y';
+var tmapApiKey = 'RWOyGTYZEd6wRVENQxG0d7jBRDM2UhS17gohlHjf';
 var markers = [];
 var polylines = [];
 
@@ -47,14 +47,28 @@ function initMapWithMarkers() {
         // 도착지 좌표 얻기
         getCoordinates(destinationAddress, function(destinationLat, destinationLon) {
             // 출발지와 도착지 마커 추가
+            // 출발지와 도착지 마커 추가
             var marker1 = new Tmapv2.Marker({
                 position: new Tmapv2.LatLng(startLat, startLon),
-                map: map
+                map: map,
+                icon: "/static/custom_marker.png", // static 폴더 아래 이미지 경로
+                iconSize: new Tmapv2.Size(30, 30) // 마커 크기 설정
             });
+
             var marker2 = new Tmapv2.Marker({
                 position: new Tmapv2.LatLng(destinationLat, destinationLon),
-                map: map
+                map: map,
+                icon: "/static/custom_marker.png", // static 폴더 아래 이미지 경로
+                iconSize: new Tmapv2.Size(30, 30) // 마커 크기 설정
             });
+
+
+            console.log("Marker 1 Position:", startLat, startLon);
+            console.log("Marker 2 Position:", destinationLat, destinationLon);
+            console.log("Marker 1 URL:", "/static/custom_marker.png");
+            console.log("Marker 2 URL:", "/static/custom_marker.png");
+
+            
 
             // 마커를 배열에 저장
             markers.push(marker1, marker2);
