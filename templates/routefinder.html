@@ -5,50 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>simpleMap & Route Finder</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='routefinder.css') }}"> <!-- CSS 파일 불러오기 -->
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo&display=swap" rel="stylesheet">
   <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script> <!-- jQuery 라이브러리 -->
   <script src="https://apis.openapi.sk.com/tmap/jsv2?version=1&appKey=Du88s82V2690hjVCJpUFf41sc3Xn94KL5rYJSE38"></script> <!-- Tmap API -->
   <script src="{{ url_for('static', filename='routefinder.js') }}"></script> <!-- JavaScript 파일 불러오기 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 </head>
 <body>
-  <h1>길찾기 결과</h1>
+  <div class="contentbox">
+    <h1>길찾기</h1>
   
   <form id="routeForm">
     <h4>출발지 입력</h4>
-    <label for="start_city">시/도</label>
-    <input type="text" id="start_city" name="start_city" placeholder="시/도 입력" required>
-    <br>
-    <label for="start_gu">군/구</label>
-    <input type="text" id="start_gu" name="start_gu" placeholder="군/구 입력" required>
-    <br>
-    <label for="start_dong">동</label>
-    <input type="text" id="start_dong" name="start_dong" placeholder="동 입력" required>
-    <br>
-    <label for="start_bunji">번지</label>
-    <input type="text" id="start_bunji" name="start_bunji" placeholder="번지 입력" required>
+    <input type="text" id="start_address" name="start_address" placeholder="출발지 주소 입력" required>
     <br>
     <h4>도착지 입력</h4>
-    <label for="end_city">시/도</label>
-    <input type="text" id="end_city" name="end_city" placeholder="시/도 입력" required>
+    <input type="text" id="end_address" name="end_address" placeholder="도착지 주소 입력" required>
     <br>
-    <label for="end_gu">군/구</label>
-    <input type="text" id="end_gu" name="end_gu" placeholder="군/구 입력" required>
-    <br>
-    <label for="end_dong">동</label>
-    <input type="text" id="end_dong" name="end_dong" placeholder="동 입력" required>
-    <br>
-    <label for="end_bunji">번지</label>
-    <input type="text" id="end_bunji" name="end_bunji" placeholder="번지 입력" required>
+    <button type="button" onclick="initMapWithMarkers()">길찾기</button>
   </form>
   
   <div id="map_div"></div> <!-- Tmap 지도 영역 -->
   
-  <div id="route_description"></div> <!-- 경로 설명 -->
   
-  <div id="subway_stations"></div> <!-- 지하철역 정보 표시 -->
-  
-  <!-- HTML 파일에 stationInfoDiv 요소가 있는지 확인 -->
-  <div id="stationInfoDiv"></div>
 
   <div id="routeSelection"></div>  <!-- 경로 선택 UI가 표시될 div -->
+</div>
 </body>
 </html>
