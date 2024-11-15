@@ -33,6 +33,11 @@ def routefinder():
                            end_gu=end_gu, 
                            end_dong=end_dong, 
                            end_bunji=end_bunji)
+    
+
+@app.route('/check_map')
+def check_map():
+    return render_template('check_map.html')
 
 
 if __name__ == '__main__':

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='check_map.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo&display=swap" rel="stylesheet">
+    <script src="{{ url_for('static', filename='check_map.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+</head>
+<body>
+    <div class="contentbox">
+        <div class="map">
+            <div class="subtitle1">
+                <h1>지도 조회</h1>
+            </div>
+
+            <div class="map_image">
+                <img src="{{ url_for('static', filename='heatmap.png') }}" alt="Heatmap" class="heatmap" />
+            </div>
+            
+            <div class="tableclass-container">
+                <div class="tableclass">
+                    <div class="tabletitle">확진자 예측</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>구역</th>
+                                <th>확진자 수</th>
+                                <th>구역</th>
+                                <th>확진자 수</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- JavaScript에서 데이터 추가 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

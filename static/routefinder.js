@@ -1,81 +1,175 @@
 var map, marker1, marker2, routeLine;
-var tmapApiKey = 'lIBmk4Kcax3oDmZn8YwSy7vg0N9qooA07uK0qHjS';
+var tmapApiKey = 'RWOyGTYZEd6wRVENQxG0d7jBRDM2UhS17gohlHjf';
 var markers = [];
 var polylines = [];
 
-// URL에서 파라미터 값을 추출하는 함수
-function getQueryParams() {
-   var params = new URLSearchParams(window.location.search);
 
-   // 출발지에 대한 파라미터 추출
-   var start_city = params.get("start_city") || "";
-   var start_gu = params.get("start_gu") || "";
-   var start_dong = params.get("start_dong") || "";
-   var start_bunji = params.get("start_bunji") || "";
+var map = null; // 전역 변수로 선언하여 페이지 로드 시 초기화
+var markers = []; // 마커들을 저장할 배열
 
-   // 도착지에 대한 파라미터 추출
-   var end_city = params.get("end_city") || "";
-   var end_gu = params.get("end_gu") || "";
-   var end_dong = params.get("end_dong") || "";
-   var end_bunji = params.get("end_bunji") || "";
-
-   // 추출한 값을 필드에 설정
-   document.getElementById("start_city").value = start_city;
-   document.getElementById("start_gu").value = start_gu;
-   document.getElementById("start_dong").value = start_dong;
-   document.getElementById("start_bunji").value = start_bunji;
-
-   document.getElementById("end_city").value = end_city;
-   document.getElementById("end_gu").value = end_gu;
-   document.getElementById("end_dong").value = end_dong;
-   document.getElementById("end_bunji").value = end_bunji;
-
-   // 전체 주소를 조합하여 반환
-   return {
-      start: `${start_city} ${start_gu} ${start_dong} ${start_bunji}`,
-      destination: `${end_city} ${end_gu} ${end_dong} ${end_bunji}`
-   };
+// 페이지 로드 시 실행될 지도 초기화 함수
+function initMap() {
+    map = new Tmapv2.Map("map_div", {
+        center: new Tmapv2.LatLng(37.5665, 126.9780), // 초기 중심 좌표를 서울의 중심으로 설정
+        width: "100%",
+        height: "400px",
+        zoom: 12
+    });
 }
 
+// 기존 마커들을 삭제하는 함수
+function clearMarkers() {
+    markers.forEach(marker => marker.setMap(null)); // 모든 마커를 지도에서 제거
+    markers = []; // 배열 초기화
+}
+
+// 지도 및 경로 찾기와 감기 예측 데이터 표시를 모두 처리하는 함수
 function initMapWithMarkers() {
-   var locations = getQueryParams();  // URL 파라미터에서 값 가져오기
-   var startAddress = locations.start;
-   var destinationAddress = locations.destination;
 
-   getCoordinates(startAddress, function(startLat, startLon) {
-      // 도착지 좌표 얻기
-      getCoordinates(destinationAddress, function(destinationLat, destinationLon) {
-         // 지도 초기화 (출발지와 도착지를 포함하는 위치로 초기화)
-         map = new Tmapv2.Map("map_div", {
-            center: new Tmapv2.LatLng(startLat, startLon),
-            width: "100%",
-            height: "400px",
-            zoom: 12
-         });
+    // 사용자 입력값 가져오기
+    var startAddress = document.getElementById("start_address").value.trim();
+    var destinationAddress = document.getElementById("end_address").value.trim();
 
-         // 출발지 마커 추가
-         marker1 = new Tmapv2.Marker({
-            position: new Tmapv2.LatLng(startLat, startLon),
-            map: map
-         });
+    // 주소 확인 후 길찾기 진행
+    if (!startAddress || !destinationAddress) {
+        alert("출발지와 도착지 주소를 모두 입력해 주세요.");
+        return;
+    }
 
-         // 도착지 마커 추가
-         marker2 = new Tmapv2.Marker({
-            position: new Tmapv2.LatLng(destinationLat, destinationLon),
-            map: map
-         });
+    console.log("출발지 주소:", startAddress);
+    console.log("도착지 주소:", destinationAddress);
 
-         // 지도의 범위를 두 마커가 모두 보이도록 조정
-         var bounds = new Tmapv2.LatLngBounds();
-         bounds.extend(new Tmapv2.LatLng(startLat, startLon));
-         bounds.extend(new Tmapv2.LatLng(destinationLat, destinationLon));
-         map.fitBounds(bounds);
+    // 기존 마커들 삭제
+    clearMarkers();
 
-         // 경로 찾기 함수 호출
-         findRoute(startLat, startLon, destinationLat, destinationLon); // 경로 찾기 실행
-      });
+    // 출발지 좌표 가져오기
+    getCoordinates(startAddress, function(startLat, startLon) {
+        // 도착지 좌표 얻기
+        getCoordinates(destinationAddress, function(destinationLat, destinationLon) {
+            // 출발지와 도착지 마커 추가
+            // 출발지와 도착지 마커 추가
+            var marker1 = new Tmapv2.Marker({
+                position: new Tmapv2.LatLng(startLat, startLon),
+                map: map,
+                icon: "/static/custom_marker.png", // static 폴더 아래 이미지 경로
+                iconSize: new Tmapv2.Size(30, 30) // 마커 크기 설정
+            });
+
+            var marker2 = new Tmapv2.Marker({
+                position: new Tmapv2.LatLng(destinationLat, destinationLon),
+                map: map,
+                icon: "/static/custom_marker.png", // static 폴더 아래 이미지 경로
+                iconSize: new Tmapv2.Size(30, 30) // 마커 크기 설정
+            });
+
+
+            console.log("Marker 1 Position:", startLat, startLon);
+            console.log("Marker 2 Position:", destinationLat, destinationLon);
+            console.log("Marker 1 URL:", "/static/custom_marker.png");
+            console.log("Marker 2 URL:", "/static/custom_marker.png");
+
+            
+
+            // 마커를 배열에 저장
+            markers.push(marker1, marker2);
+
+            // 지도의 범위를 두 마커가 모두 보이도록 조정
+            var bounds = new Tmapv2.LatLngBounds();
+            bounds.extend(new Tmapv2.LatLng(startLat, startLon));
+            bounds.extend(new Tmapv2.LatLng(destinationLat, destinationLon));
+            map.fitBounds(bounds);
+
+            // 감기 예측 데이터를 표시하기 위한 구 이름 가져오기
+            displayFluPredictionInfo(startAddress, destinationAddress, startLat, startLon, destinationLat, destinationLon);
+
+            // 경로 찾기 함수 호출 (경로 찾기 실행 보장)
+            findRoute(startLat, startLon, destinationLat, destinationLon);
+        });
+    });
+}
+
+// 페이지가 로드될 때 초기 지도를 설정
+window.onload = function() {
+    initMap();
+};
+
+
+// 주소에서 구 이름에 따라 감기 예측 데이터를 지도에 표시하는 함수
+function displayFluPredictionInfo(startAddress, endAddress, startLat, startLon, endLat, endLon) {
+   // CSV 파일 경로를 확인하고 감기 예측 데이터를 로드
+   $.get("static/predicted_cases_2024-01-01_UTF.csv", function(data) {
+       const fluData = Papa.parse(data, { header: true }).data;
+
+       const fluCases = {};
+       fluData.forEach(row => {
+           fluCases[row['district']] = row['cold_case'];
+       });
+
+       // 디버깅: fluCases 객체 내용 출력
+       console.log("Loaded fluCases data:", fluCases);
+
+       // 출발지와 도착지 구 이름을 구해 예측 데이터를 지도에 표시
+       getDistrictName(startAddress, function(startGu) {
+           getDistrictName(endAddress, function(endGu) {
+               console.log("출발지 구:", startGu, "도착지 구:", endGu); // 추가 디버깅 로그
+               addFluCaseMarkers(startGu, endGu, startLat, startLon, endLat, endLon, fluCases);
+           });
+       });
    });
 }
+
+
+
+// 주소에서 구 이름을 추출하는 함수 (Tmap Geocoding API 사용)
+function getDistrictName(address, callback) {
+   $.ajax({
+       method: "GET",
+       url: "https://apis.openapi.sk.com/tmap/geo/fullAddrGeo?version=1",
+       data: {
+           format: "json",
+           coordType: "WGS84GEO",
+           fullAddr: address,
+           appKey: tmapApiKey  // Tmap API Key 입력
+       },
+       success: function(response) {
+           const districtName = response.coordinateInfo.coordinate[0].gu_gun; // 구 이름 추출
+           callback(districtName);
+       },
+       error: function(error) {
+           console.error("구 이름을 찾을 수 없습니다:", error);
+           callback(null);
+       }
+   });
+}
+
+// 구에 따라 마커 옆에 감기 예측 데이터를 표시하는 함수
+function addFluCaseMarkers(startGu, endGu, startLat, startLon, endLat, endLon, fluCases) {
+   // 출발지 구 예측 데이터 표시
+   if (startGu && fluCases[startGu]) {
+       const fluCaseText = `예측 감기 환자 수: ${fluCases[startGu]}`;
+       const startInfoWindow = new Tmapv2.InfoWindow({
+           position: new Tmapv2.LatLng(startLat, startLon),
+           content: `<div class="flu-info">${startGu} ${fluCaseText}</div>`,
+           map: map
+       });
+   } else {
+       console.warn(`출발지 구에 대한 감기 예측 데이터가 없습니다: ${startGu}`);
+   }
+
+   // 도착지 구 예측 데이터 표시
+   if (endGu && fluCases[endGu]) {
+       const fluCaseText = `예측 감기 환자 수: ${fluCases[endGu]}`;
+       const endInfoWindow = new Tmapv2.InfoWindow({
+           position: new Tmapv2.LatLng(endLat, endLon),
+           content: `<div class="flu-info">${endGu} ${fluCaseText}</div>`,
+           map: map
+       });
+   } else {
+       console.warn(`도착지 구에 대한 감기 예측 데이터가 없습니다: ${endGu}`);
+   }
+}
+
+
 
 // 주소를 전체 문자열로 변환한 후, 좌표 변환 API를 이용해 위도와 경도로 변환하는 함수
 function getCoordinates(address, callback) {
@@ -108,126 +202,136 @@ function getCoordinates(address, callback) {
 }
 
 
-
 // 경로 찾기 함수
 function findRoute(startLat, startLon, destinationLat, destinationLon) {
-   console.log("Finding route from", startLat, startLon, "to", destinationLat, destinationLon);
-
-   $.ajax({
-      method: "POST",
-       url: "http://127.0.0.1:5001/find_route",  // 백엔드의 경로 탐색 API 호출
-       contentType: "application/json",
-       data: JSON.stringify({
-           start_lat: startLat,
-           start_lon: startLon,
-           end_lat: destinationLat,
-           end_lon: destinationLon
-       }),
-       success: function(response) {
-           console.log("Received response:", response);
-
-           if (response.metaData && response.metaData.plan && response.metaData.plan.itineraries && response.metaData.plan.itineraries.length > 0) {
-               console.log("Valid route response received:", response.metaData.plan.itineraries);
-
-               // 경로 선택 UI 생성
-               var routeSelectionDiv = document.getElementById('routeSelection');
-               routeSelectionDiv.innerHTML = '';  // 이전 내용 제거
-
-               // 경로 리스트 생성
-               response.metaData.plan.itineraries.forEach(function(itinerary, index) {
-                   console.log("Processing itinerary:", itinerary);
-
-                   // 시간 계산 (초 -> 시간, 분)
-                   const totalMinutes = Math.floor(itinerary.totalTime / 60);
-                   const hours = Math.floor(totalMinutes / 60);
-                   const minutes = totalMinutes % 60;
-
-                   // 시간 표시 형식 선택
-                   const timeDisplay = hours > 0 ? `${hours}시간 ${minutes}분` : `${minutes}분`;
-
-                   // 경로 요약 정보를 표시할 요소 생성
-                   var routeSummary = document.createElement('div');
-                   routeSummary.className = 'route-summary'; // 스타일링을 위한 클래스 추가
-                   routeSummary.innerHTML = `
-                       <h3>경로 ${index + 1}</h3>
-                       <p>총 시간: ${timeDisplay}, 요금: ${itinerary.fare.regular.totalFare}원</p>
-                   `;
-
-                   // 정류장 정보가 표시될 위치
-                   var stationInfo = document.createElement('div');
-                   stationInfo.className = 'station-info'; // 스타일 적용을 위한 클래스
-                   stationInfo.innerHTML = "<strong>정류장 정보:</strong>";
-                   stationInfo.style.display = 'none';  // 기본적으로 숨김
-
-                   // 경로 선택 버튼 생성
-                   var routeButton = document.createElement('button');
-                   routeButton.innerHTML = "이 경로 선택";
-                   routeButton.className = 'select-route-btn';  // 스타일링을 위한 클래스 추가
-                   routeButton.onclick = function() {
-                       console.log("Selected route legs:", itinerary.legs);
-
-                       // 기존 표시된 정류장 정보 숨기기
-                       document.querySelectorAll('.station-info').forEach(function(info) {
-                           info.style.display = 'none';
-                       });
-
-                       // 선택한 경로의 정류장 정보 표시 및 경로 그리기
-                       stationInfo.style.display = 'block';
-                       drawRoute(itinerary.legs);  // 경로의 세부 단계를 그리는 함수
-                       displayStationInfo(itinerary.legs, stationInfo);  // 정류장 정보 표시
-                       
-                       // 혼잡도 데이터 요청
-                        // legs가 undefined인지 확인하는 로그 추가
-                     if (!itinerary.legs) {
-                        console.error("Itinerary legs is undefined");
-                     } else {
-                        processCongestionData(itinerary.legs);  // 혼잡도 데이터 처리
-                     }
-                     };
-
-                   // UI에 추가
-                   routeSelectionDiv.appendChild(routeSummary);
-                   routeSelectionDiv.appendChild(stationInfo);
-                   routeSelectionDiv.appendChild(routeButton);
-               });
-           } else {
-               console.error("경로 탐색 결과가 없습니다.", response);
-           }
-       },
-       error: function(error) {
-           console.error("경로 찾기 실패", error);
-       }
-   });
-}
+    console.log("Finding route from", startLat, startLon, "to", destinationLat, destinationLon);
+ 
+    var routeSelectionDiv = document.getElementById('routeSelection');
+    routeSelectionDiv.innerHTML = '';  // 이전 경로 정보 제거
+ 
+    $.ajax({
+        method: "POST",
+        url: "http://127.0.0.1:5001/find_route",
+        contentType: "application/json",
+        data: JSON.stringify({
+            start_lat: startLat,
+            start_lon: startLon,
+            end_lat: destinationLat,
+            end_lon: destinationLon
+        }),
+        success: function(response) {
+            console.log("Received response:", response);
+ 
+            if (response.metaData && response.metaData.plan && response.metaData.plan.itineraries && response.metaData.plan.itineraries.length > 0) {
+                
+                response.metaData.plan.itineraries.forEach(function(itinerary, index) {
+                    const totalMinutes = Math.floor(itinerary.totalTime / 60);
+                    const hours = Math.floor(totalMinutes / 60);
+                    const minutes = totalMinutes % 60;
+                    const timeDisplay = hours > 0 ? `${hours}시간 ${minutes}분` : `${minutes}분`;
+ 
+                    var routeSummary = document.createElement('div');
+                    routeSummary.className = 'route-summary';
+                    routeSummary.innerHTML = `
+                        <h3>경로 ${index + 1}</h3>
+                    `;
+ 
+                    // 경로 시간과 요금, 버튼을 같은 줄에 배치하는 새로운 div 생성
+                    var routeDetails = document.createElement('div');
+                    routeDetails.className = 'route-details'; // Flex 레이아웃을 위한 클래스
+ 
+                    var routeInfo = document.createElement('p');
+                    routeInfo.innerText = `총 시간: ${timeDisplay}, 요금: ${itinerary.fare.regular.totalFare}원`;
+ 
+                    var routeButton = document.createElement('button');
+                    routeButton.innerHTML = "이 경로 선택";
+                    routeButton.className = 'select-route-btn';
+                    routeButton.onclick = function() {
+                        document.querySelectorAll('.station-info').forEach(function(info) {
+                            info.style.display = 'none';
+                        });
+ 
+                        stationInfo.style.display = 'block';
+                        drawRoute(itinerary.legs);
+ 
+                        // 혼잡도 데이터를 요청하고 성공 시 정류장 정보를 표시
+                        processCongestionData(itinerary.legs, function(congestionData) {
+                            displayStationInfo(itinerary.legs, stationInfo, congestionData);
+                        });
+                    };
+ 
+                    routeDetails.appendChild(routeInfo);
+                    routeDetails.appendChild(routeButton);
+ 
+                    var stationInfo = document.createElement('div');
+                    stationInfo.className = 'station-info';
+                    stationInfo.style.display = 'none';
+ 
+                    routeSummary.appendChild(routeDetails);
+                    routeSelectionDiv.appendChild(routeSummary);
+                    routeSelectionDiv.appendChild(stationInfo);
+                });
+            } else {
+                console.error("경로 탐색 결과가 없습니다.", response);
+            }
+        },
+        error: function(error) {
+            console.error("경로 찾기 실패", error);
+        }
+    });
+ }
+ 
 
 
 
-// 타는 역과 내리는 역만 표시하는 함수
-function displayStationInfo(legs, stationInfoDiv) {
-   stationInfoDiv.innerHTML = '';  // 기존 내용을 초기화
+// 타는 역과 내리는 역만 표시하는 함수 (혼잡도 정보 추가)
+function displayStationInfo(legs, stationInfoDiv, congestionData) {
+   // 기존 내용을 초기화하여 지도 아래 정보가 다시 표시되지 않도록 설정
+   stationInfoDiv.innerHTML = '';
 
-   const stationCoordinates = [];  // 좌표 배열을 저장할 변수
+   // congestionData가 객체일 경우 배열로 변환
+   if (congestionData && !Array.isArray(congestionData)) {
+       congestionData = Object.values(congestionData).flat();
+   }
 
+   // legs에 대해 반복하여 경로 선택 UI에 혼잡도 정보 표시
    legs.forEach(function(leg) {
        if (leg.mode === 'SUBWAY' && leg.passStopList && leg.passStopList.stationList) {
-            // 타는 역 정보 표시
-            const startStation = leg.passStopList.stationList[0];
-            const startStationInfo = document.createElement('p');
-            startStationInfo.innerHTML = `타는 역: ${startStation.stationName} (${startStation.lat}, ${startStation.lon})`;
-            stationInfoDiv.appendChild(startStationInfo);
-            stationCoordinates.push({ name: startStation.stationName, lat: startStation.lat, lon: startStation.lon }); // 좌표 저장
+           const startStation = leg.passStopList.stationList[0];
+           const endStation = leg.passStopList.stationList[leg.passStopList.stationList.length - 1];
 
-            // 내리는 역 정보 표시
-            const endStation = leg.passStopList.stationList[leg.passStopList.stationList.length - 1];
-            const endStationInfo = document.createElement('p');
-            endStationInfo.innerHTML = `내리는 역: ${endStation.stationName} (${endStation.lat}, ${endStation.lon})`;
-            stationInfoDiv.appendChild(endStationInfo);
-            stationCoordinates.push({ name: endStation.stationName, lat: endStation.lat, lon: endStation.lon }); // 좌표 저장
+           // 타는 역 혼잡도 정보
+           const startStationCongestion = congestionData && congestionData.find(data => data.station_name.replace("역", "").trim() === startStation.stationName.replace("역", "").trim());
+           const startCongestionText = startStationCongestion ? getCongestionText(startStationCongestion.congestion_data) : "혼잡도 없음";
+
+           // 내리는 역 혼잡도 정보
+           const endStationCongestion = congestionData && congestionData.find(data => data.station_name.replace("역", "").trim() === endStation.stationName.replace("역", "").trim());
+           const endCongestionText = endStationCongestion ? getCongestionText(endStationCongestion.congestion_data) : "혼잡도 없음";
+
+           // 경로 선택 UI에만 정보를 표시할 요소 생성
+           const startStationInfo = document.createElement('p');
+           startStationInfo.innerHTML = `타는 역: ${startStation.stationName} - 혼잡도: ${startCongestionText}`;
+           stationInfoDiv.appendChild(startStationInfo);
+
+           const endStationInfo = document.createElement('p');
+           endStationInfo.innerHTML = `내리는 역: ${endStation.stationName} - 혼잡도: ${endCongestionText}`;
+           stationInfoDiv.appendChild(endStationInfo);
+
+           // 디버깅 로그로 혼잡도 정보를 확인
+           console.log(`타는 역: ${startStation.stationName} - 혼잡도: ${startCongestionText}`);
+           console.log(`내리는 역: ${endStation.stationName} - 혼잡도: ${endCongestionText}`);
        }
    });
-   
-   return stationCoordinates; // 좌표 배열 반환
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -324,82 +428,69 @@ function handleRouteData(response) {
 }
 
 
+// 혼잡도 데이터를 서버에서 요청하여 호출 후 콜백으로 전달하는 함수
+function processCongestionData(legs, callback) {
+   const targetStations = [];
 
-// 혼잡도 데이터를 서버에서 요청하여 마커 생성하는 함수
-function processCongestionData(legs) {
-   // 좌표 정보 가져오기
-   const stationCoordinates = displayStationInfo(legs, document.getElementById('stationInfoDiv'));
-
-   const targetStations = [];  // 혼잡도 데이터 요청용 배열
-
-   // 타는 역과 내리는 역 정보 추출 (혼잡도 요청용)
+   // SUBWAY 모드의 타는 역과 내리는 역 정보를 추출하여 요청 대상 스테이션 리스트 생성
    legs.forEach((leg) => {
-      if (leg.mode === 'SUBWAY' && leg.passStopList && leg.passStopList.stationList) {
-         const startStation = leg.passStopList.stationList[0];
-         const endStation = leg.passStopList.stationList[leg.passStopList.stationList.length - 1];
-         targetStations.push({ station_name: startStation.stationName, route_name: leg.route });
-         targetStations.push({ station_name: endStation.stationName, route_name: leg.route });
-      }
+       if (leg.mode === 'SUBWAY' && leg.passStopList && leg.passStopList.stationList) {
+           const startStation = leg.passStopList.stationList[0];
+           const endStation = leg.passStopList.stationList[leg.passStopList.stationList.length - 1];
+           targetStations.push({ station_name: startStation.stationName, route_name: leg.route });
+           targetStations.push({ station_name: endStation.stationName, route_name: leg.route });
+       }
    });
 
    console.log("Sending target stations data to server:", targetStations);
 
-   // 서버에 혼잡도 요청
    $.ajax({
-      method: "POST",
-      url: "http://127.0.0.1:5001/get_congestion",
-      contentType: "application/json",
-      data: JSON.stringify({ stations: targetStations }),
-      success: function(response) {
-         console.log("Received congestion data:", response);
-
-         // stationCoordinates가 객체일 경우 각 노선의 역 좌표를 배열로 변환하여 병합
-         const stationCoordsArray = Array.isArray(stationCoordinates)
-            ? stationCoordinates
-            : Object.values(stationCoordinates).flat();
-
-         if (response && Object.keys(response).length > 0) {
-            displayCongestionMarkers(stationCoordsArray, response);  // 좌표와 혼잡도 정보 함께 전달
-         } else {
-            console.error("혼잡도 데이터가 없습니다.");
-         }
-      },
-      error: function(error) {
-         console.error("혼잡도 데이터 요청 실패", error);
-      }
+       method: "POST",
+       url: "http://127.0.0.1:5001/get_congestion",
+       contentType: "application/json",
+       data: JSON.stringify({ stations: targetStations }),
+       success: function(response) {
+           console.log("Received congestion data:", response);
+           callback(response);  // 혼잡도 데이터를 콜백으로 전달
+       },
+       error: function(error) {
+           console.error("혼잡도 데이터 요청 실패", error);
+           callback([]);  // 오류 시 빈 배열을 콜백으로 반환
+       }
    });
 }
 
 
-// 혼잡도 데이터를 서버에서 요청하여 마커 생성하는 함수
+
+
+// 혼잡도를 텍스트로 변환하는 함수
+function getCongestionText(congestionLevel) {
+   if (congestionLevel >= 80) {
+       return "매우 혼잡";
+   } else if (congestionLevel >= 60) {
+       return "혼잡";
+   } else if (congestionLevel >= 40) {
+       return "보통";
+   } else {
+       return "여유";
+   }
+}
+
+// 혼잡도 데이터를 서버에서 요청하여 마커를 생성하는 함수
 function displayCongestionMarkers(stationCoordinates, congestionData) {
-   console.log("Displaying congestion markers for received data:", congestionData);
+   console.log("Displaying congestion markers for received data:", stationCoordinates);
 
    // congestionData가 배열인지 확인하고 아니면 변환
    if (!Array.isArray(congestionData)) {
-       console.error("congestionData가 배열이 아닙니다. 배열로 변환합니다:", congestionData);
        congestionData = Object.values(congestionData).flat();
    }
-   console.log("변환된 congestionData:", congestionData);
 
    // stationCoordinates가 객체인 경우 배열로 변환
    const stationArray = Array.isArray(stationCoordinates) ? stationCoordinates : Object.values(stationCoordinates).flat();
-   console.log("변환된 stationArray:", stationArray);
 
-   // stationArray 배열 내용 확인
-   console.log("Received stationArray:");
-   stationArray.forEach((coord, index) => {
-       console.log(`stationArray[${index}] - Name: ${coord.name}, Lat: ${coord.lat}, Lon: ${coord.lon}`);
-   });
-
-   // congestionData 내용 확인
-   console.log("Received congestionData array:");
-   congestionData.forEach((data, index) => {
-       console.log(`congestionData[${index}] - Station Name: ${data.station_name}, Route Name: ${data.route_name}, Congestion Level: ${data.congestion_data}`);
-   });
-
+   // 각 역의 혼잡도에 따라 마커를 지도에 표시
    congestionData.forEach(function(stationData) {
-       const stationName = stationData.station_name.replace("역", "").trim(); // "역" 제거 및 공백 제거
+       const stationName = stationData.station_name.replace("역", "").trim();
        const routeName = stationData.route_name;
        const congestionLevel = stationData.congestion_data;
 
@@ -417,7 +508,7 @@ function displayCongestionMarkers(stationCoordinates, congestionData) {
        // 혼잡도에 따른 마커 색상 설정
        const markerColor = getMarkerColor(congestionLevel);
 
-       // 마커 생성 및 지도에 추가
+       // 마커 생성 및 지도에 추가 (말풍선은 생략)
        const marker = new Tmapv2.Marker({
            position: new Tmapv2.LatLng(lat, lon),
            map: map,
@@ -429,24 +520,9 @@ function displayCongestionMarkers(stationCoordinates, congestionData) {
            }
        });
 
-       // 혼잡도 정보를 표시하는 정보창 생성
-       const infoWindowContent = `<div class="infowindow-content">${stationName} (${routeName}) 혼잡도: ${congestionLevel}</div>`;
-       
-       const infoWindow = new Tmapv2.InfoWindow({
-           position: new Tmapv2.LatLng(lat, lon),
-           content: infoWindowContent,
-           map: map
-       });
-      
-
        markers.push(marker);
-       markers.push(infoWindow);
    });
 }
-
-
-
-
 
 // 혼잡도 데이터에 따라 마커와 정보창을 생성하여 지도에 표시하는 함수
 // 혼잡도에 따른 마커 색상을 결정하는 함수
@@ -480,7 +556,3 @@ function removePolylines() {
    polylines = [];
 }
 
-// 페이지 로드 시 지도 및 길찾기 초기화
-$(document).ready(function() {
-   initMapWithMarkers(); // 페이지 로드 시 길찾기 자동 실행
-});

@@ -7,7 +7,7 @@ import urllib.parse
 app = Flask(__name__)
 CORS(app)
 
-API_KEY = 'lIBmk4Kcax3oDmZn8YwSy7vg0N9qooA07uK0qHjS'
+API_KEY = 'RWOyGTYZEd6wRVENQxG0d7jBRDM2UhS17gohlHjf'
 TMAP_URL = "https://apis.openapi.sk.com/transit/routes"
 
 # 전역 변수로 선언
